@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, ScrollView, useWindowDimensions, TouchableOpacity, Animated,
+  type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -11,6 +12,7 @@ import {
 
 import { Button } from '@/components/ui/Button';
 import { palette } from '@/constants/colors';
+import { markOnboarded } from '@/app/index';
 
 interface Slide {
   Icon: LucideIcon;
@@ -31,29 +33,34 @@ export default function Onboarding() {
     {
       Icon: PiggyBank,
       title: t('app.name'),
-      body: t('app.tagline'),
-      bg: palette.warm,
+      body:  t('app.tagline'),
+      bg:    palette.warm,
     },
     {
       Icon: Users,
       title: t('budget.members.title'),
-      body: t('budget.members.invite'),
-      bg: palette.primary,
+      body:  t('budget.members.invite'),
+      bg:    palette.primary,
     },
     {
       Icon: ShieldCheck,
       title: t('profile.security'),
-      body: t('biometric.subtitle'),
-      bg: palette.secondary,
+      body:  t('biometric.subtitle'),
+      bg:    palette.secondary,
     },
   ];
+
+  const finish = async () => {
+    await markOnboarded();
+    router.replace('/(auth)/login');
+  };
 
   const next = () => {
     if (page < slides.length - 1) {
       scrollRef.current?.scrollTo({ x: (page + 1) * width, animated: true });
       setPage(page + 1);
     } else {
-      router.replace('/(auth)/login');
+      finish();
     }
   };
 
@@ -66,8 +73,8 @@ export default function Onboarding() {
         showsHorizontalScrollIndicator={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false, listener: (e) => {
-            const x = (e as unknown as { nativeEvent: { contentOffset: { x: number } } }).nativeEvent.contentOffset.x;
+          { useNativeDriver: false, listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+            const x = e.nativeEvent.contentOffset.x;
             setPage(Math.round(x / width));
           } },
         )}
@@ -91,7 +98,6 @@ export default function Onboarding() {
         ))}
       </ScrollView>
 
-      {/* Pagination dots */}
       <View className="my-6 flex-row items-center justify-center gap-2">
         {slides.map((_, i) => (
           <View
@@ -102,7 +108,7 @@ export default function Onboarding() {
       </View>
 
       <View className="flex-row items-center justify-between px-6 pb-6">
-        <TouchableOpacity onPress={() => router.replace('/(auth)/login')} className="py-3">
+        <TouchableOpacity onPress={finish} className="py-3">
           <Text className="text-sm text-muted-fg font-sans">
             {page === slides.length - 1 ? '' : t('biometric.later')}
           </Text>

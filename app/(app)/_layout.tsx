@@ -59,6 +59,7 @@ export default function AppLayout() {
       {/* Hidden screens (deep navigation only) */}
       <Tabs.Screen name="two-factor-setup" options={{ href: null }} />
       <Tabs.Screen name="banking-connect"  options={{ href: null }} />
+      <Tabs.Screen name="invitation/[token]" options={{ href: null }} />
       <Tabs.Screen name="budget/[id]/_layout"  options={{ href: null }} />
       <Tabs.Screen name="budget/[id]/overview" options={{ href: null }} />
       <Tabs.Screen name="budget/[id]/members"  options={{ href: null }} />
