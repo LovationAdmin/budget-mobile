@@ -5,6 +5,10 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
+import {
+  ShieldCheck, FileText, Lock, Globe, ChevronRight, Download,
+} from 'lucide-react-native';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { UserService } from '@/services/user.service';
@@ -24,12 +28,38 @@ const passwordSchema = z.object({
   message: 'Mismatch', path: ['confirm_password'],
 });
 
-type ProfileForm = z.infer<typeof profileSchema>;
+type ProfileForm  = z.infer<typeof profileSchema>;
 type PasswordForm = z.infer<typeof passwordSchema>;
+
+function Row({
+  Icon, label, onPress, right,
+}: {
+  Icon: React.ComponentType<{ size?: number; color?: string }>;
+  label: string;
+  onPress: () => void;
+  right?: React.ReactNode;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      className="flex-row items-center justify-between border-t border-border py-3 first:border-t-0"
+    >
+      <View className="flex-row items-center gap-3">
+        <Icon size={18} color={palette.light.mutedFg} />
+        <Text className="text-sm text-foreground font-sans">{label}</Text>
+      </View>
+      {right ?? <ChevronRight size={16} color={palette.light.mutedFg} />}
+    </TouchableOpacity>
+  );
+}
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
-  const { user, logout, refreshUser, biometricEnabled, enableBiometric, disableBiometric } = useAuth();
+  const router = useRouter();
+  const {
+    user, logout, refreshUser,
+    biometricEnabled, enableBiometric, disableBiometric,
+  } = useAuth();
   const [bioAvailable, setBioAvailable] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
@@ -63,17 +93,9 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const handleBiometricToggle = async (val: boolean) => {
-    if (val) await enableBiometric();
-    else await disableBiometric();
-  };
-
-  const handleLanguage = async (lng: SupportedLocale) => { await setLocale(lng); };
-
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-        {/* Header */}
         <View className="mb-6 items-center">
           <View className="h-20 w-20 items-center justify-center rounded-full bg-warm-500">
             <Text className="text-3xl text-white font-display-bold">
@@ -82,16 +104,11 @@ export default function ProfileScreen() {
           </View>
           <Text className="mt-3 text-xl text-foreground font-display-bold">{user?.name}</Text>
           <Text className="text-sm text-muted-fg font-sans">{user?.email}</Text>
-          {user?.email_verified ? (
-            <View className="mt-1 rounded-full bg-success/10 px-3 py-0.5">
-              <Text className="text-xs text-success font-medium">{t('common.confirm')}</Text>
-            </View>
-          ) : null}
         </View>
 
-        {/* Edit profile */}
+        {/* Profile name */}
         <Card className="mb-4">
-          <Text className="mb-4 text-base text-foreground font-display-semibold">
+          <Text className="mb-3 text-sm text-foreground font-display-semibold">
             {t('profile.title')}
           </Text>
           <Controller control={profileForm.control} name="name"
@@ -101,64 +118,76 @@ export default function ProfileScreen() {
                 error={profileForm.formState.errors.name?.message}
                 autoCapitalize="words" />
             )} />
-          {profileSuccess ? (
-            <Text className="mb-2 text-sm text-success">✓</Text>
-          ) : null}
+          {profileSuccess ? <Text className="mb-2 text-sm text-success">✓</Text> : null}
           <Button onPress={profileForm.handleSubmit(onSaveProfile)}
             loading={profileForm.formState.isSubmitting} variant="outline">
             {t('common.save')}
           </Button>
         </Card>
 
-        {/* Security & preferences */}
+        {/* Security */}
         <Card className="mb-4">
-          <Text className="mb-4 text-base text-foreground font-display-semibold">
-            {t('profile.biometric')}
+          <Text className="mb-3 text-sm text-foreground font-display-semibold">
+            {t('profile.biometric').replace('Déverrouillage biométrique', 'Sécurité')}
           </Text>
+
           {bioAvailable ? (
-            <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center justify-between border-b border-border py-3">
               <Text className="flex-1 text-sm text-foreground font-sans">
-                {t('biometric.enableSubtitle')}
+                {t('profile.biometric')}
               </Text>
               <Switch
                 value={biometricEnabled}
-                onValueChange={handleBiometricToggle}
+                onValueChange={async (v) => v ? enableBiometric() : disableBiometric()}
                 trackColor={{ true: palette.primary, false: palette.light.border }}
               />
             </View>
-          ) : (
-            <Text className="text-sm text-muted-fg font-sans">
-              {t('common.empty')}
-            </Text>
-          )}
+          ) : null}
+
+          <Row
+            Icon={ShieldCheck}
+            label={t('profile.twoFactor')}
+            onPress={() => router.push('/(app)/two-factor-setup')}
+            right={
+              user?.totp_enabled ? (
+                <Text className="text-xs text-success font-display-semibold">ON</Text>
+              ) : (
+                <ChevronRight size={16} color={palette.light.mutedFg} />
+              )
+            }
+          />
         </Card>
 
+        {/* Preferences */}
         <Card className="mb-4">
-          <Text className="mb-4 text-base text-foreground font-display-semibold">
+          <Text className="mb-3 text-sm text-foreground font-display-semibold">
             {t('profile.language')}
           </Text>
           <View className="flex-row gap-2">
             {(['fr', 'en'] as const).map((lng) => (
               <TouchableOpacity
                 key={lng}
-                onPress={() => handleLanguage(lng)}
+                onPress={() => setLocale(lng as SupportedLocale)}
                 className={`flex-1 rounded-xl border px-4 py-3 ${
                   i18n.language === lng ? 'border-primary bg-primary/5' : 'border-border bg-card'
                 }`}
               >
-                <Text className={`text-center font-display-semibold ${
-                  i18n.language === lng ? 'text-primary' : 'text-foreground'
-                }`}>
-                  {lng.toUpperCase()}
-                </Text>
+                <View className="flex-row items-center justify-center gap-2">
+                  <Globe size={14} color={i18n.language === lng ? palette.primary : palette.light.mutedFg} />
+                  <Text className={`font-display-semibold ${
+                    i18n.language === lng ? 'text-primary' : 'text-foreground'
+                  }`}>
+                    {lng.toUpperCase()}
+                  </Text>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
         </Card>
 
-        {/* Password change */}
+        {/* Password */}
         <Card className="mb-4">
-          <Text className="mb-4 text-base text-foreground font-display-semibold">
+          <Text className="mb-3 text-sm text-foreground font-display-semibold">
             {t('auth.password')}
           </Text>
           <Controller control={passwordForm.control} name="current_password"
@@ -169,7 +198,7 @@ export default function ProfileScreen() {
             )} />
           <Controller control={passwordForm.control} name="new_password"
             render={({ field }) => (
-              <Input label={t('auth.password')} placeholder="10+ chars" secureTextEntry
+              <Input label={t('auth.password')} placeholder="10+" secureTextEntry
                 value={field.value} onChangeText={field.onChange} onBlur={field.onBlur}
                 error={passwordForm.formState.errors.new_password?.message} />
             )} />
@@ -186,9 +215,66 @@ export default function ProfileScreen() {
           </Button>
         </Card>
 
+        {/* Data & legal */}
+        <Card className="mb-4">
+          <Row
+            Icon={Download}
+            label={t('profile.exportData')}
+            onPress={async () => {
+              try {
+                const data = await UserService.exportData();
+                Alert.alert(t('common.confirm'), JSON.stringify(data).slice(0, 200) + '…');
+              } catch { Alert.alert(t('errors.network')); }
+            }}
+          />
+          <Row
+            Icon={FileText}
+            label="Privacy Policy"
+            onPress={() => router.push('/legal/privacy')}
+          />
+          <Row
+            Icon={FileText}
+            label="Terms of Service"
+            onPress={() => router.push('/legal/terms')}
+          />
+        </Card>
+
+        {/* Logout */}
         <Button variant="danger" onPress={handleLogout}>
           {t('profile.logout')}
         </Button>
+
+        {/* Delete account (destructive — surface but require confirmation) */}
+        <TouchableOpacity
+          className="mt-4 py-3"
+          onPress={() => Alert.alert(
+            t('profile.deleteAccount'),
+            'Cette action est définitive.',
+            [
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: t('common.delete'), style: 'destructive',
+                onPress: async () => {
+                  // Real delete requires the password; route to a confirmation
+                  // screen in a future iteration. For now, surface a hint.
+                  Alert.alert('TODO', 'Confirmer le mot de passe dans un écran dédié.');
+                }
+              },
+            ],
+          )}
+        >
+          <Text className="text-center text-sm text-muted-fg font-sans">
+            {t('profile.deleteAccount')}
+          </Text>
+        </TouchableOpacity>
+
+        <View className="mt-6 items-center">
+          <View className="flex-row items-center gap-2">
+            <Lock size={12} color={palette.light.mutedFg} />
+            <Text className="text-xs text-muted-fg font-sans">
+              BudgetFamille · v1.0.0
+            </Text>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

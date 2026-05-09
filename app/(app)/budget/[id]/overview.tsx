@@ -1,20 +1,22 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { VictoryPie } from 'victory-native';
+import { Plus, Pencil } from 'lucide-react-native';
 
 import { useBudget, useBudgetData } from '@/hooks/useBudget';
+import { useBudgetMutations } from '@/hooks/useBudgetMutations';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
+import { IncomeFormSheet } from '@/components/forms/IncomeFormSheet';
 import { CATEGORY_COLORS, palette } from '@/constants/colors';
 import type { Charge, IncomeSource } from '@/types';
 
 function formatMoney(n: number, currency = 'EUR') {
-  try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n);
-  } catch { return `${n.toFixed(2)} ${currency}`; }
+  try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n); }
+  catch { return `${n.toFixed(2)} ${currency}`; }
 }
 
 function StatBox({ label, value, color }: { label: string; value: string; color: string }) {
@@ -30,7 +32,10 @@ export default function OverviewTab() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const budget = useBudget(id!);
-  const env = useBudgetData(id!);
+  const env    = useBudgetData(id!);
+  const m      = useBudgetMutations(id!);
+  const [editingIncome, setEditingIncome] = useState<IncomeSource | undefined>(undefined);
+  const [showIncomeForm, setShowIncomeForm] = useState(false);
 
   if (env.isLoading || budget.isLoading) return <LoadingScreen />;
   if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
@@ -106,21 +111,52 @@ export default function OverviewTab() {
         </Card>
       ) : null}
 
-      {incomes.length > 0 ? (
-        <Card>
-          <Text className="mb-3 text-sm text-foreground font-display-semibold">
+      <Card>
+        <View className="mb-3 flex-row items-center justify-between">
+          <Text className="text-sm text-foreground font-display-semibold">
             {t('budget.overview.income')}
           </Text>
-          {incomes.map((s) => (
-            <View key={s.id} className="mb-2 flex-row items-center justify-between">
-              <Text className="text-sm text-foreground font-sans">{s.label}</Text>
+          <TouchableOpacity
+            onPress={() => { setEditingIncome(undefined); setShowIncomeForm(true); }}
+            className="rounded-lg bg-warm-500 px-3 py-1 flex-row items-center"
+          >
+            <Plus size={14} color="#FFF" />
+            <Text className="ml-1 text-xs text-white font-display-semibold">
+              {t('common.save')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {incomes.length > 0 ? (
+          incomes.map((s) => (
+            <TouchableOpacity
+              key={s.id}
+              onPress={() => { setEditingIncome(s); setShowIncomeForm(true); }}
+              className="mb-2 flex-row items-center justify-between"
+            >
+              <View className="flex-row items-center gap-2 flex-1">
+                <Pencil size={12} color={palette.light.mutedFg} />
+                <Text className="text-sm text-foreground font-sans">{s.label}</Text>
+              </View>
               <Text className="text-sm text-success font-display-semibold">
                 {formatMoney(s.amount ?? 0, currency)}
               </Text>
-            </View>
-          ))}
-        </Card>
-      ) : null}
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text className="text-sm text-muted-fg font-sans">{t('common.empty')}</Text>
+        )}
+      </Card>
+
+      <IncomeFormSheet
+        visible={showIncomeForm}
+        onClose={() => setShowIncomeForm(false)}
+        initial={editingIncome}
+        onSubmit={async (i) => {
+          if (editingIncome) await m.updateIncome(editingIncome.id, i);
+          else               await m.addIncome(i);
+        }}
+        onDelete={editingIncome ? () => m.removeIncome(editingIncome.id) : undefined}
+      />
     </ScrollView>
   );
 }

@@ -17,7 +17,10 @@
     "empty": "Aucun élément",
     "error": "Une erreur est survenue",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "add": "Ajouter",
+    "show": "Voir",
+    "hide": "Masquer"
   },
   "auth": {
     "loginTitle": "Connexion",
@@ -82,7 +85,8 @@
       "expenses": "Dépenses",
       "balance": "Solde",
       "savings": "Épargne",
-      "monthlyBreakdown": "Répartition mensuelle"
+      "monthlyBreakdown": "Répartition mensuelle",
+      "addIncome": "Ajouter un revenu"
     },
     "members": {
       "title": "Membres",
@@ -96,21 +100,32 @@
     "charges": {
       "title": "Charges récurrentes",
       "addCharge": "Ajouter une charge",
+      "editCharge": "Modifier la charge",
       "label": "Libellé",
       "amount": "Montant",
       "category": "Catégorie",
+      "recurrence": "Récurrence",
+      "monthly": "Mensuel",
+      "yearly": "Annuel",
+      "oneTime": "Unique",
       "totalMonthly": "Total mensuel"
     },
     "projects": {
       "title": "Projets d'épargne",
       "add": "Nouveau projet",
+      "edit": "Modifier le projet",
+      "name": "Nom du projet",
       "target": "Objectif",
-      "saved": "Économisé"
+      "saved": "Économisé",
+      "deadline": "Échéance"
     },
     "calendar": {
       "title": "Calendrier",
       "month": "Mois",
-      "addEntry": "Ajouter une ligne"
+      "addEntry": "Ajouter une ligne",
+      "editEntry": "Modifier la ligne",
+      "type": "Type",
+      "date": "Date"
     },
     "reality": {
       "title": "Réalité bancaire",
@@ -118,7 +133,9 @@
       "noConnection": "Aucune banque connectée",
       "syncing": "Synchronisation…",
       "savingsPool": "Compte d'épargne",
-      "totalReal": "Total réel"
+      "totalReal": "Total réel",
+      "planned": "Prévu",
+      "actual": "Réel"
     }
   },
   "categories": {
@@ -139,7 +156,10 @@
     "logout": "Se déconnecter",
     "logoutAll": "Déconnecter tous les appareils",
     "deleteAccount": "Supprimer mon compte",
-    "exportData": "Exporter mes données"
+    "exportData": "Exporter mes données",
+    "security": "Sécurité",
+    "preferences": "Préférences",
+    "legal": "Légal"
   },
   "errors": {
     "network": "Connexion impossible. Vérifiez votre réseau.",

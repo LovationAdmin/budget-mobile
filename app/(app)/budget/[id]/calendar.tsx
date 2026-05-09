@@ -4,12 +4,14 @@ import { useLocalSearchParams } from 'expo-router';
 import { format, parseISO, isSameMonth, addMonths, subMonths } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, CalendarDays, Plus } from 'lucide-react-native';
 
 import { useBudget, useBudgetData } from '@/hooks/useBudget';
+import { useBudgetMutations } from '@/hooks/useBudgetMutations';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
+import { CalendarEntryFormSheet } from '@/components/forms/CalendarEntryFormSheet';
 import { palette } from '@/constants/colors';
 import type { CalendarEntry } from '@/types';
 
@@ -18,27 +20,33 @@ function formatMoney(n: number, currency = 'EUR') {
   catch { return `${n.toFixed(2)} ${currency}`; }
 }
 
-function EntryRow({ entry, currency }: { entry: CalendarEntry; currency: string }) {
+function EntryRow({
+  entry, currency, onPress,
+}: {
+  entry: CalendarEntry; currency: string; onPress: () => void;
+}) {
   const { i18n } = useTranslation();
   const locale = i18n.language === 'fr' ? fr : enUS;
   const isIncome = entry.type === 'income';
   return (
-    <Card className="mb-1.5" padding="sm">
-      <View className="flex-row items-center justify-between">
-        <View className="flex-1">
-          <Text className="text-sm text-foreground font-display-semibold">{entry.label}</Text>
-          <Text className="text-xs text-muted-fg font-sans">
-            {format(parseISO(entry.date), 'd MMM', { locale })}
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
+      <Card className="mb-1.5" padding="sm">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1">
+            <Text className="text-sm text-foreground font-display-semibold">{entry.label}</Text>
+            <Text className="text-xs text-muted-fg font-sans">
+              {format(parseISO(entry.date), 'd MMM', { locale })}
+            </Text>
+          </View>
+          <Text
+            className="text-sm font-display-bold"
+            style={{ color: isIncome ? palette.success : palette.danger }}
+          >
+            {isIncome ? '+' : '-'}{formatMoney(Math.abs(entry.amount), currency)}
           </Text>
         </View>
-        <Text
-          className="text-sm font-display-bold"
-          style={{ color: isIncome ? palette.success : palette.danger }}
-        >
-          {isIncome ? '+' : '-'}{formatMoney(Math.abs(entry.amount), currency)}
-        </Text>
-      </View>
-    </Card>
+      </Card>
+    </TouchableOpacity>
   );
 }
 
@@ -46,8 +54,11 @@ export default function CalendarTab() {
   const { t, i18n } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const budget = useBudget(id!);
-  const env = useBudgetData(id!);
+  const env    = useBudgetData(id!);
+  const m      = useBudgetMutations(id!);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [editing, setEditing] = useState<CalendarEntry | undefined>(undefined);
+  const [showForm, setShowForm] = useState(false);
 
   if (env.isLoading) return <LoadingScreen />;
   if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
@@ -64,50 +75,78 @@ export default function CalendarTab() {
   const monthExpenses = sorted.filter((e) => e.type === 'expense').reduce((a, e) => a + e.amount, 0);
 
   return (
-    <FlatList
-      data={sorted}
-      keyExtractor={(e) => e.id}
-      contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
-      renderItem={({ item }) => <EntryRow entry={item} currency={currency} />}
-      refreshControl={
-        <RefreshControl refreshing={env.isRefetching} onRefresh={env.refetch} tintColor={palette.primary} />
-      }
-      ListHeaderComponent={
-        <View className="mb-4">
-          <View className="mb-3 flex-row items-center justify-between">
-            <TouchableOpacity onPress={() => setCurrentMonth((m) => subMonths(m, 1))} className="p-2">
-              <ChevronLeft size={20} color={palette.light.foreground} />
-            </TouchableOpacity>
-            <Text className="text-base text-foreground capitalize font-display-bold">
-              {format(currentMonth, 'MMMM yyyy', { locale })}
-            </Text>
-            <TouchableOpacity onPress={() => setCurrentMonth((m) => addMonths(m, 1))} className="p-2">
-              <ChevronRight size={20} color={palette.light.foreground} />
-            </TouchableOpacity>
-          </View>
+    <View className="flex-1 bg-background">
+      <FlatList
+        data={sorted}
+        keyExtractor={(e) => e.id}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        renderItem={({ item }) => (
+          <EntryRow
+            entry={item}
+            currency={currency}
+            onPress={() => { setEditing(item); setShowForm(true); }}
+          />
+        )}
+        refreshControl={
+          <RefreshControl refreshing={env.isRefetching} onRefresh={env.refetch} tintColor={palette.primary} />
+        }
+        ListHeaderComponent={
+          <View className="mb-4">
+            <View className="mb-3 flex-row items-center justify-between">
+              <TouchableOpacity onPress={() => setCurrentMonth((m) => subMonths(m, 1))} className="p-2">
+                <ChevronLeft size={20} color={palette.light.foreground} />
+              </TouchableOpacity>
+              <Text className="text-base text-foreground capitalize font-display-bold">
+                {format(currentMonth, 'MMMM yyyy', { locale })}
+              </Text>
+              <TouchableOpacity onPress={() => setCurrentMonth((m) => addMonths(m, 1))} className="p-2">
+                <ChevronRight size={20} color={palette.light.foreground} />
+              </TouchableOpacity>
+            </View>
 
-          <View className="flex-row gap-3">
-            <Card className="flex-1 items-center" padding="sm">
-              <Text className="text-xs text-muted-fg font-sans">{t('budget.overview.income')}</Text>
-              <Text className="mt-0.5 text-base text-success font-display-bold">
-                {formatMoney(monthIncome, currency)}
-              </Text>
-            </Card>
-            <Card className="flex-1 items-center" padding="sm">
-              <Text className="text-xs text-muted-fg font-sans">{t('budget.overview.expenses')}</Text>
-              <Text className="mt-0.5 text-base text-danger font-display-bold">
-                {formatMoney(monthExpenses, currency)}
-              </Text>
-            </Card>
+            <View className="flex-row gap-3">
+              <Card className="flex-1 items-center" padding="sm">
+                <Text className="text-xs text-muted-fg font-sans">{t('budget.overview.income')}</Text>
+                <Text className="mt-0.5 text-base text-success font-display-bold">
+                  {formatMoney(monthIncome, currency)}
+                </Text>
+              </Card>
+              <Card className="flex-1 items-center" padding="sm">
+                <Text className="text-xs text-muted-fg font-sans">{t('budget.overview.expenses')}</Text>
+                <Text className="mt-0.5 text-base text-danger font-display-bold">
+                  {formatMoney(monthExpenses, currency)}
+                </Text>
+              </Card>
+            </View>
           </View>
-        </View>
-      }
-      ListEmptyComponent={
-        <Card className="items-center py-10">
-          <CalendarDays size={32} color={palette.light.mutedFg} />
-          <Text className="mt-3 text-sm text-muted-fg font-sans">{t('common.empty')}</Text>
-        </Card>
-      }
-    />
+        }
+        ListEmptyComponent={
+          <Card className="items-center py-10">
+            <CalendarDays size={32} color={palette.light.mutedFg} />
+            <Text className="mt-3 text-sm text-muted-fg font-sans">{t('common.empty')}</Text>
+          </Card>
+        }
+      />
+
+      <TouchableOpacity
+        onPress={() => { setEditing(undefined); setShowForm(true); }}
+        className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-warm-500"
+        style={{ shadowColor: '#F97316', shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }}
+      >
+        <Plus size={24} color="#FFF" />
+      </TouchableOpacity>
+
+      <CalendarEntryFormSheet
+        visible={showForm}
+        onClose={() => setShowForm(false)}
+        initial={editing}
+        defaultDate={format(currentMonth, 'yyyy-MM-dd')}
+        onSubmit={async (e) => {
+          if (editing) await m.updateCalendarEntry(editing.id, e);
+          else         await m.addCalendarEntry(e);
+        }}
+        onDelete={editing ? () => m.removeCalendarEntry(editing.id) : undefined}
+      />
+    </View>
   );
 }

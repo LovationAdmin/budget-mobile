@@ -56,14 +56,16 @@ export default function AppLayout() {
         ),
       }} />
 
-      {/* Hide budget detail screens from tab bar */}
-      <Tabs.Screen name="budget/[id]/_layout"   options={{ href: null }} />
-      <Tabs.Screen name="budget/[id]/overview"  options={{ href: null }} />
-      <Tabs.Screen name="budget/[id]/members"   options={{ href: null }} />
-      <Tabs.Screen name="budget/[id]/charges"   options={{ href: null }} />
-      <Tabs.Screen name="budget/[id]/projects"  options={{ href: null }} />
-      <Tabs.Screen name="budget/[id]/calendar"  options={{ href: null }} />
-      <Tabs.Screen name="budget/[id]/reality"   options={{ href: null }} />
+      {/* Hidden screens (deep navigation only) */}
+      <Tabs.Screen name="two-factor-setup" options={{ href: null }} />
+      <Tabs.Screen name="banking-connect"  options={{ href: null }} />
+      <Tabs.Screen name="budget/[id]/_layout"  options={{ href: null }} />
+      <Tabs.Screen name="budget/[id]/overview" options={{ href: null }} />
+      <Tabs.Screen name="budget/[id]/members"  options={{ href: null }} />
+      <Tabs.Screen name="budget/[id]/charges"  options={{ href: null }} />
+      <Tabs.Screen name="budget/[id]/projects" options={{ href: null }} />
+      <Tabs.Screen name="budget/[id]/calendar" options={{ href: null }} />
+      <Tabs.Screen name="budget/[id]/reality"  options={{ href: null }} />
     </Tabs>
   );
 }

@@ -1,0 +1,24 @@
+<!--
+  Adaptive icon foreground.
+  Important: Android crops the foreground inside a circle/squircle, so the
+  meaningful content must stay inside the central 66% safe-zone (≈ 660×660).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="brand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Solid coloured roof / house in the safe-zone -->
+  <g transform="translate(512 480)">
+    <path d="M -200 50 L 0 -160 L 200 50 L 170 50 L 170 200 L -170 200 L -170 50 Z"
+          fill="url(#brand)"
+          stroke="#0F172A" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
+    <rect x="-130" y="80"  width="50"  height="100" rx="8" fill="#FFFFFF"/>
+    <rect x="-60"  y="40"  width="50"  height="140" rx="8" fill="#FFFFFF"/>
+    <rect x="10"   y="0"   width="50"  height="180" rx="8" fill="#FFFFFF"/>
+    <rect x="80"   y="80"  width="50"  height="100" rx="8" fill="#FFFFFF"/>
+  </g>
+</svg>

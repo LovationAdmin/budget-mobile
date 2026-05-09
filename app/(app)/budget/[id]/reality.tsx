@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, ScrollView, RefreshControl, Linking, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Link2, ExternalLink } from 'lucide-react-native';
+import { Link2 } from 'lucide-react-native';
 
 import { useBudget, useBudgetData } from '@/hooks/useBudget';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -22,7 +22,6 @@ function CompareBar({
 }: {
   label: string; planned: number; actual: number; currency: string;
 }) {
-  const { t } = useTranslation();
   const max = Math.max(planned, actual, 1);
   const overBudget = actual > planned;
   const diff = actual - planned;
@@ -45,7 +44,7 @@ function CompareBar({
         <Text className="w-20 text-xs text-muted-fg">{formatMoney(planned, currency)}</Text>
       </View>
       <View className="flex-row items-center gap-2">
-        <Text className="w-14 text-right text-xs text-muted-fg">{t('budget.reality.totalReal')}</Text>
+        <Text className="w-14 text-right text-xs text-muted-fg">Réel</Text>
         <View className="flex-1 h-3 rounded-full bg-muted">
           <View
             className="h-full rounded-full"
@@ -63,15 +62,19 @@ function CompareBar({
 
 export default function RealityTab() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const budget = useBudget(id!);
-  const env = useBudgetData(id!);
+  const env    = useBudgetData(id!);
 
   if (env.isLoading) return <LoadingScreen />;
   if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
 
   const reality = env.data.data?.reality as RealityData | undefined;
   const currency = budget.data?.currency ?? 'EUR';
+
+  const goConnect = () =>
+    router.push({ pathname: '/(app)/banking-connect', params: { id, institutionId: '' } });
 
   if (!reality) {
     return (
@@ -85,15 +88,9 @@ export default function RealityTab() {
         <Text className="mt-2 text-center text-sm text-muted-fg font-sans">
           {t('budget.reality.title')}
         </Text>
-        <TouchableOpacity
-          className="mt-6 flex-row items-center"
-          onPress={() => Linking.openURL(`https://budgetfamille.com/budget/${id}/complete/reality`)}
-        >
-          <Text className="mr-1 text-primary font-display-semibold">
-            {t('budget.reality.connectBank')}
-          </Text>
-          <ExternalLink size={14} color={palette.primary} />
-        </TouchableOpacity>
+        <Button variant="warm" className="mt-6" onPress={goConnect}>
+          {t('budget.reality.connectBank')}
+        </Button>
       </View>
     );
   }
@@ -153,10 +150,11 @@ export default function RealityTab() {
       </Card>
 
       {!reality.banking_connected ? (
-        <Button variant="warm" className="mt-4"
-          onPress={() => Linking.openURL(`https://budgetfamille.com/budget/${id}/complete/reality`)}>
-          {t('budget.reality.connectBank')}
-        </Button>
+        <TouchableOpacity onPress={goConnect}>
+          <Button variant="warm" className="mt-4" onPress={goConnect}>
+            {t('budget.reality.connectBank')}
+          </Button>
+        </TouchableOpacity>
       ) : null}
     </ScrollView>
   );

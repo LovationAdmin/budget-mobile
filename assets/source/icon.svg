@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFEDD5"/>
+      <stop offset="60%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.85"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+
+  <!-- Roof / family silhouette -->
+  <g transform="translate(512 360)">
+    <path d="M -240 60 L 0 -180 L 240 60 L 200 60 L 200 240 L -200 240 L -200 60 Z"
+          fill="url(#card)"
+          stroke="#0F172A" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
+    <!-- Bar chart inside the house -->
+    <rect x="-150" y="80"  width="60"  height="120" rx="10" fill="#1879B0"/>
+    <rect x="-70"  y="40"  width="60"  height="160" rx="10" fill="#0EA5A8"/>
+    <rect x="10"   y="0"   width="60"  height="200" rx="10" fill="#F97316"/>
+    <rect x="90"   y="100" width="60"  height="100" rx="10" fill="#0F172A"/>
+  </g>
+
+  <!-- BF wordmark -->
+  <text x="512" y="780" text-anchor="middle"
+        font-family="'Plus Jakarta Sans','DM Sans','Helvetica',sans-serif"
+        font-weight="800" font-size="180" fill="#FFFFFF"
+        letter-spacing="-8">BF</text>
+</svg>

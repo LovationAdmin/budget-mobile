@@ -8,7 +8,7 @@
     "confirm": "Confirm", "back": "Back", "next": "Next",
     "loading": "Loading…", "retry": "Retry", "search": "Search",
     "empty": "No items", "error": "Something went wrong",
-    "yes": "Yes", "no": "No"
+    "yes": "Yes", "no": "No", "add": "Add", "show": "Show", "hide": "Hide"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -66,7 +66,8 @@
     },
     "overview": {
       "income": "Income", "expenses": "Expenses", "balance": "Balance",
-      "savings": "Savings", "monthlyBreakdown": "Monthly breakdown"
+      "savings": "Savings", "monthlyBreakdown": "Monthly breakdown",
+      "addIncome": "Add income"
     },
     "members": {
       "title": "Members", "invite": "Invite by email",
@@ -75,20 +76,27 @@
     },
     "charges": {
       "title": "Recurring charges", "addCharge": "Add a charge",
+      "editCharge": "Edit charge",
       "label": "Label", "amount": "Amount", "category": "Category",
+      "recurrence": "Recurrence", "monthly": "Monthly",
+      "yearly": "Yearly", "oneTime": "One-time",
       "totalMonthly": "Monthly total"
     },
     "projects": {
       "title": "Savings projects", "add": "New project",
-      "target": "Target", "saved": "Saved"
+      "edit": "Edit project", "name": "Project name",
+      "target": "Target", "saved": "Saved", "deadline": "Deadline"
     },
     "calendar": {
-      "title": "Calendar", "month": "Month", "addEntry": "Add entry"
+      "title": "Calendar", "month": "Month",
+      "addEntry": "Add entry", "editEntry": "Edit entry",
+      "type": "Type", "date": "Date"
     },
     "reality": {
       "title": "Bank reality", "connectBank": "Connect my bank",
       "noConnection": "No bank connected", "syncing": "Syncing…",
-      "savingsPool": "Savings account", "totalReal": "Real total"
+      "savingsPool": "Savings account", "totalReal": "Real total",
+      "planned": "Planned", "actual": "Actual"
     }
   },
   "categories": {
@@ -100,7 +108,8 @@
     "title": "Profile", "language": "Language",
     "biometric": "Biometric unlock", "twoFactor": "Two-factor authentication",
     "logout": "Sign out", "logoutAll": "Sign out everywhere",
-    "deleteAccount": "Delete my account", "exportData": "Export my data"
+    "deleteAccount": "Delete my account", "exportData": "Export my data",
+    "security": "Security", "preferences": "Preferences", "legal": "Legal"
   },
   "errors": {
     "network": "Cannot reach the server. Check your connection.",

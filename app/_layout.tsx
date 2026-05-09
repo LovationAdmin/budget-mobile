@@ -24,7 +24,9 @@ import Toast from 'react-native-toast-message';
 import { QueryProvider } from '@/contexts/QueryProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { initI18n } from '@/i18n';
+import { initSentry } from '@/services/sentry';
 
+initSentry();
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
@@ -48,7 +50,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryProvider>
           <AuthProvider>
-            <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
+            <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(app)" />
+              <Stack.Screen name="legal/privacy" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="legal/terms"   options={{ animation: 'slide_from_right' }} />
+            </Stack>
             <StatusBar style="auto" />
             <Toast />
           </AuthProvider>

@@ -29,6 +29,8 @@
     "expo-haptics": "~13.0.1",
     "expo-splash-screen": "~0.27.7",
     "expo-web-browser": "~13.0.3",
+    "expo-clipboard": "~6.0.3",
+    "react-native-webview": "13.8.6",
     "@expo-google-fonts/plus-jakarta-sans": "^0.2.3",
     "@expo-google-fonts/dm-sans": "^0.2.3",
     "react": "18.2.0",

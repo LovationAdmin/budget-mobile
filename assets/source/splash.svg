@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1284 2778">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FFEDD5"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1284" height="2778" fill="url(#bg)"/>
+
+  <!-- Centred logo -->
+  <g transform="translate(642 1280)">
+    <rect x="-180" y="-180" width="360" height="360" rx="80" fill="url(#brand)"/>
+    <text x="0" y="60" text-anchor="middle"
+          font-family="'Plus Jakarta Sans','DM Sans','Helvetica',sans-serif"
+          font-weight="800" font-size="160" fill="#FFFFFF"
+          letter-spacing="-6">BF</text>
+  </g>
+
+  <!-- App name -->
+  <text x="642" y="1620" text-anchor="middle"
+        font-family="'Plus Jakarta Sans','DM Sans','Helvetica',sans-serif"
+        font-weight="700" font-size="84" fill="#0F172A">BudgetFamille</text>
+
+  <!-- Tagline -->
+  <text x="642" y="1700" text-anchor="middle"
+        font-family="'DM Sans','Helvetica',sans-serif"
+        font-weight="500" font-size="40" fill="#64748B">Le budget familial, simple et collaboratif</text>
+</svg>

@@ -6,7 +6,6 @@ export default function AuthLayout() {
   const { isAuthenticated, isLoading, isLocked } = useAuth();
 
   if (isLoading) return <LoadingScreen />;
-  // Authenticated and unlocked → app. Authenticated but locked → biometric screen.
   if (isAuthenticated && !isLocked) return <Redirect href="/(app)" />;
 
   return (
@@ -14,6 +13,8 @@ export default function AuthLayout() {
       <Stack.Screen name="login" />
       <Stack.Screen name="signup" />
       <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="reset-password" />
+      <Stack.Screen name="verify-email" />
       <Stack.Screen name="magic-link" />
       <Stack.Screen name="biometric-unlock" options={{ animation: 'fade' }} />
     </Stack>
