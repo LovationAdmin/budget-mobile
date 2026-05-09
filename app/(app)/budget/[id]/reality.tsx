@@ -1,94 +1,99 @@
 import React from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Linking, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { Link2, ExternalLink } from 'lucide-react-native';
 
-import { useBudgetData } from '@/hooks/useBudget';
+import { useBudget, useBudgetData } from '@/hooks/useBudget';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
-import { CATEGORY_LABELS, COLORS } from '@/constants/colors';
+import { Button } from '@/components/ui/Button';
+import { palette } from '@/constants/colors';
+import type { RealityData } from '@/types';
 
-function formatEur(n: number) {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
+function formatMoney(n: number, currency = 'EUR') {
+  try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n); }
+  catch { return `${n.toFixed(2)} ${currency}`; }
 }
 
 function CompareBar({
-  label,
-  planned,
-  actual,
+  label, planned, actual, currency,
 }: {
-  label: string;
-  planned: number;
-  actual: number;
+  label: string; planned: number; actual: number; currency: string;
 }) {
+  const { t } = useTranslation();
   const max = Math.max(planned, actual, 1);
   const overBudget = actual > planned;
   const diff = actual - planned;
-
   return (
     <View className="mb-4">
       <View className="mb-1 flex-row items-center justify-between">
-        <Text className="text-sm font-medium text-slate-700">{label}</Text>
+        <Text className="text-sm text-foreground font-medium">{label}</Text>
         <Text
-          className="text-xs font-semibold"
-          style={{ color: overBudget ? COLORS.danger : COLORS.success }}
+          className="text-xs font-display-semibold"
+          style={{ color: overBudget ? palette.danger : palette.success }}
         >
-          {overBudget ? '+' : ''}{formatEur(diff)}
+          {overBudget ? '+' : ''}{formatMoney(diff, currency)}
         </Text>
       </View>
-      {/* Planned bar */}
-      <View className="mb-1">
-        <View className="flex-row items-center gap-2">
-          <Text className="w-14 text-right text-xs text-slate-400">Prévu</Text>
-          <View className="flex-1 h-3 rounded-full bg-slate-100">
-            <View
-              className="h-full rounded-full bg-primary-500"
-              style={{ width: `${(planned / max) * 100}%` }}
-            />
-          </View>
-          <Text className="w-20 text-xs text-slate-500">{formatEur(planned)}</Text>
+      <View className="mb-1 flex-row items-center gap-2">
+        <Text className="w-14 text-right text-xs text-muted-fg">Prévu</Text>
+        <View className="flex-1 h-3 rounded-full bg-muted">
+          <View className="h-full rounded-full bg-primary" style={{ width: `${(planned / max) * 100}%` }} />
         </View>
+        <Text className="w-20 text-xs text-muted-fg">{formatMoney(planned, currency)}</Text>
       </View>
-      {/* Actual bar */}
-      <View>
-        <View className="flex-row items-center gap-2">
-          <Text className="w-14 text-right text-xs text-slate-400">Réel</Text>
-          <View className="flex-1 h-3 rounded-full bg-slate-100">
-            <View
-              className="h-full rounded-full"
-              style={{
-                width: `${(actual / max) * 100}%`,
-                backgroundColor: overBudget ? COLORS.danger : COLORS.success,
-              }}
-            />
-          </View>
-          <Text className="w-20 text-xs text-slate-500">{formatEur(actual)}</Text>
+      <View className="flex-row items-center gap-2">
+        <Text className="w-14 text-right text-xs text-muted-fg">{t('budget.reality.totalReal')}</Text>
+        <View className="flex-1 h-3 rounded-full bg-muted">
+          <View
+            className="h-full rounded-full"
+            style={{
+              width: `${(actual / max) * 100}%`,
+              backgroundColor: overBudget ? palette.danger : palette.success,
+            }}
+          />
         </View>
+        <Text className="w-20 text-xs text-muted-fg">{formatMoney(actual, currency)}</Text>
       </View>
     </View>
   );
 }
 
 export default function RealityTab() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, isLoading, isError, refetch, isRefetching } = useBudgetData(id!);
+  const budget = useBudget(id!);
+  const env = useBudgetData(id!);
 
-  if (isLoading) return <LoadingScreen />;
-  if (isError || !data) return <ErrorScreen onRetry={refetch} />;
+  if (env.isLoading) return <LoadingScreen />;
+  if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
 
-  const reality = data.reality;
+  const reality = env.data.data?.reality as RealityData | undefined;
+  const currency = budget.data?.currency ?? 'EUR';
 
   if (!reality) {
     return (
-      <View className="flex-1 items-center justify-center bg-bg px-6">
-        <Text className="text-4xl">🔗</Text>
-        <Text className="mt-4 text-center text-base font-semibold text-slate-700">
-          Connexion bancaire requise
+      <View className="flex-1 items-center justify-center bg-background px-6">
+        <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-warm-50">
+          <Link2 size={32} color={palette.warm} />
+        </View>
+        <Text className="text-center text-base text-foreground font-display-semibold">
+          {t('budget.reality.noConnection')}
         </Text>
-        <Text className="mt-2 text-center text-sm text-slate-400">
-          Connectez votre compte bancaire via EnableBanking dans la version web pour voir vos
-          dépenses réelles vs. planifiées.
+        <Text className="mt-2 text-center text-sm text-muted-fg font-sans">
+          {t('budget.reality.title')}
         </Text>
+        <TouchableOpacity
+          className="mt-6 flex-row items-center"
+          onPress={() => Linking.openURL(`https://budgetfamille.com/budget/${id}/complete/reality`)}
+        >
+          <Text className="mr-1 text-primary font-display-semibold">
+            {t('budget.reality.connectBank')}
+          </Text>
+          <ExternalLink size={14} color={palette.primary} />
+        </TouchableOpacity>
       </View>
     );
   }
@@ -100,53 +105,59 @@ export default function RealityTab() {
     <ScrollView
       className="flex-1"
       contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#6366f1" />}
+      refreshControl={
+        <RefreshControl refreshing={env.isRefetching} onRefresh={env.refetch} tintColor={palette.primary} />
+      }
     >
-      {/* Global summary */}
       <Card className="mb-4">
         <View className="flex-row gap-3">
-          <View className="flex-1 items-center rounded-xl bg-primary-50 py-3">
-            <Text className="text-xs text-slate-500">Prévu</Text>
-            <Text className="mt-0.5 text-lg font-bold text-primary-600">
-              {formatEur(reality.planned_total)}
+          <View className="flex-1 items-center rounded-xl bg-primary/5 py-3">
+            <Text className="text-xs text-muted-fg font-sans">Prévu</Text>
+            <Text className="mt-0.5 text-lg text-primary font-display-bold">
+              {formatMoney(reality.planned_total, currency)}
             </Text>
           </View>
-          <View className="flex-1 items-center rounded-xl bg-slate-50 py-3">
-            <Text className="text-xs text-slate-500">Réel</Text>
+          <View className="flex-1 items-center rounded-xl bg-muted py-3">
+            <Text className="text-xs text-muted-fg font-sans">{t('budget.reality.totalReal')}</Text>
             <Text
-              className="mt-0.5 text-lg font-bold"
-              style={{ color: overBudget ? COLORS.danger : COLORS.success }}
+              className="mt-0.5 text-lg font-display-bold"
+              style={{ color: overBudget ? palette.danger : palette.success }}
             >
-              {formatEur(reality.actual_total)}
+              {formatMoney(reality.actual_total, currency)}
             </Text>
           </View>
         </View>
-        <View
-          className={`mt-3 rounded-xl px-4 py-2 ${overBudget ? 'bg-red-50' : 'bg-green-50'}`}
-        >
+        <View className={`mt-3 rounded-xl px-4 py-2 ${overBudget ? 'bg-danger/10' : 'bg-success/10'}`}>
           <Text
-            className="text-center text-sm font-semibold"
-            style={{ color: overBudget ? COLORS.danger : COLORS.success }}
+            className="text-center text-sm font-display-semibold"
+            style={{ color: overBudget ? palette.danger : palette.success }}
           >
-            {overBudget
-              ? `⚠ Dépassement de ${formatEur(totalDiff)}`
-              : `✓ Budget respecté — ${formatEur(Math.abs(totalDiff))} d'économies`}
+            {overBudget ? '+' : '-'}{formatMoney(Math.abs(totalDiff), currency)}
           </Text>
         </View>
       </Card>
 
-      {/* Per category */}
       <Card>
-        <Text className="mb-4 text-sm font-semibold text-slate-700">Par catégorie</Text>
+        <Text className="mb-4 text-sm text-foreground font-display-semibold">
+          {t('budget.tabs.charges')}
+        </Text>
         {reality.by_category.map((item) => (
           <CompareBar
-            key={item.category}
-            label={CATEGORY_LABELS[item.category] ?? item.category}
+            key={String(item.category)}
+            label={t(`categories.${item.category}`, { defaultValue: String(item.category) })}
             planned={item.planned}
             actual={item.actual}
+            currency={currency}
           />
         ))}
       </Card>
+
+      {!reality.banking_connected ? (
+        <Button variant="warm" className="mt-4"
+          onPress={() => Linking.openURL(`https://budgetfamille.com/budget/${id}/complete/reality`)}>
+          {t('budget.reality.connectBank')}
+        </Button>
+      ) : null}
     </ScrollView>
   );
 }

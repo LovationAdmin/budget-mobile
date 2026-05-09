@@ -1,0 +1,111 @@
+{
+  "app": {
+    "name": "BudgetFamille",
+    "tagline": "Family budgeting, simple and shared"
+  },
+  "common": {
+    "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit",
+    "confirm": "Confirm", "back": "Back", "next": "Next",
+    "loading": "Loading…", "retry": "Retry", "search": "Search",
+    "empty": "No items", "error": "Something went wrong",
+    "yes": "Yes", "no": "No"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "loginSubtitle": "Welcome back",
+    "signupTitle": "Create an account",
+    "signupSubtitle": "Let's start managing your family budget",
+    "email": "Email address",
+    "password": "Password",
+    "name": "Full name",
+    "totpCode": "6-digit code",
+    "submit": "Sign in",
+    "submitSignup": "Create account",
+    "magicLinkButton": "Send a magic link",
+    "magicLinkRequested": "We sent you a sign-in link. Check your inbox.",
+    "verifyMagicLink": "Verifying link…",
+    "noAccount": "No account yet?",
+    "haveAccount": "Already have an account?",
+    "createAccount": "Create account",
+    "signin": "Sign in",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Reset password",
+    "forgotSubtitle": "Enter your email and we'll send a reset link.",
+    "forgotSubmit": "Send reset link",
+    "forgotSent": "If an account exists, an email has been sent.",
+    "tfaTitle": "Two-factor authentication",
+    "tfaSubtitle": "Enter the 6-digit code from your authenticator app",
+    "emailNotVerified": "Email not verified. Check your inbox.",
+    "resendVerification": "Resend verification email"
+  },
+  "biometric": {
+    "title": "Unlock",
+    "subtitle": "Use your fingerprint or face to open BudgetFamille.",
+    "useBiometric": "Unlock",
+    "useFallback": "Sign in with password",
+    "promptReason": "BudgetFamille authentication",
+    "enableTitle": "Enable biometric unlock?",
+    "enableSubtitle": "You won't need to type your password each time.",
+    "enable": "Enable",
+    "later": "Later"
+  },
+  "dashboard": {
+    "greeting": "Hello {{name}}",
+    "yourBudgets": "Your budgets",
+    "newBudget": "New budget",
+    "createBudget": "Create a budget",
+    "budgetName": "Budget name",
+    "budgetCurrency": "Currency",
+    "empty": "No budgets yet. Create your first one!",
+    "createFirst": "Create my first budget"
+  },
+  "budget": {
+    "tabs": {
+      "overview": "Overview", "members": "Members", "charges": "Charges",
+      "projects": "Projects", "calendar": "Calendar", "reality": "Reality"
+    },
+    "overview": {
+      "income": "Income", "expenses": "Expenses", "balance": "Balance",
+      "savings": "Savings", "monthlyBreakdown": "Monthly breakdown"
+    },
+    "members": {
+      "title": "Members", "invite": "Invite by email",
+      "inviteSent": "Invitation sent", "remove": "Remove from budget",
+      "removeConfirm": "Remove this member?", "owner": "Owner", "pending": "Pending"
+    },
+    "charges": {
+      "title": "Recurring charges", "addCharge": "Add a charge",
+      "label": "Label", "amount": "Amount", "category": "Category",
+      "totalMonthly": "Monthly total"
+    },
+    "projects": {
+      "title": "Savings projects", "add": "New project",
+      "target": "Target", "saved": "Saved"
+    },
+    "calendar": {
+      "title": "Calendar", "month": "Month", "addEntry": "Add entry"
+    },
+    "reality": {
+      "title": "Bank reality", "connectBank": "Connect my bank",
+      "noConnection": "No bank connected", "syncing": "Syncing…",
+      "savingsPool": "Savings account", "totalReal": "Real total"
+    }
+  },
+  "categories": {
+    "housing": "Housing", "transport": "Transport", "food": "Food",
+    "health": "Health", "education": "Education", "leisure": "Leisure",
+    "savings": "Savings", "other": "Other"
+  },
+  "profile": {
+    "title": "Profile", "language": "Language",
+    "biometric": "Biometric unlock", "twoFactor": "Two-factor authentication",
+    "logout": "Sign out", "logoutAll": "Sign out everywhere",
+    "deleteAccount": "Delete my account", "exportData": "Export my data"
+  },
+  "errors": {
+    "network": "Cannot reach the server. Check your connection.",
+    "invalid_credentials": "Invalid email or password.",
+    "session_expired": "Your session has expired, please sign in again.",
+    "validation": "Please check your input."
+  }
+}

@@ -1,102 +1,109 @@
 import React from 'react';
 import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { CreditCard, Sparkles } from 'lucide-react-native';
 
-import { useBudgetData } from '@/hooks/useBudget';
+import { useBudget, useBudgetData } from '@/hooks/useBudget';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
-import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/constants/colors';
+import { CATEGORY_COLORS, palette } from '@/constants/colors';
 import type { Charge } from '@/types';
 
-function formatEur(n: number) {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
+function formatMoney(n: number, currency = 'EUR') {
+  try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n); }
+  catch { return `${n.toFixed(2)} ${currency}`; }
 }
 
-const RECURRENCE_LABELS: Record<string, string> = {
-  monthly:  'Mensuel',
-  yearly:   'Annuel',
-  'one-time': 'Unique',
-};
-
-function ChargeRow({ charge }: { charge: Charge }) {
-  const color = CATEGORY_COLORS[charge.category] ?? '#94a3b8';
+function ChargeRow({ charge, currency }: { charge: Charge; currency: string }) {
+  const { t } = useTranslation();
+  const color = CATEGORY_COLORS[String(charge.category)] ?? palette.light.mutedFg;
   const savings = charge.market_suggestion?.savings_potential;
-
   return (
     <Card className="mb-2" padding="sm">
       <View className="flex-row items-start">
-        <View
-          className="mr-3 mt-0.5 h-3 w-3 rounded-full"
-          style={{ backgroundColor: color }}
-        />
+        <View className="mr-3 mt-0.5 h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
         <View className="flex-1">
-          <Text className="font-semibold text-slate-900">{charge.label}</Text>
+          <Text className="text-foreground font-display-semibold">{charge.label}</Text>
           <View className="mt-0.5 flex-row items-center gap-2">
-            <Text className="text-xs text-slate-400">
-              {CATEGORY_LABELS[charge.category] ?? charge.category}
+            <Text className="text-xs text-muted-fg font-sans">
+              {t(`categories.${charge.category}`, { defaultValue: String(charge.category) })}
             </Text>
-            <Text className="text-xs text-slate-300">·</Text>
-            <Text className="text-xs text-slate-400">
-              {RECURRENCE_LABELS[charge.recurrence] ?? charge.recurrence}
-            </Text>
+            {charge.recurrence ? (
+              <>
+                <Text className="text-xs text-muted-fg/40">·</Text>
+                <Text className="text-xs text-muted-fg font-sans">{charge.recurrence}</Text>
+              </>
+            ) : null}
           </View>
-          {savings != null && savings > 0 && (
-            <View className="mt-1 flex-row items-center gap-1 rounded-lg bg-green-50 px-2 py-1 self-start">
-              <Text className="text-xs text-green-600">
-                💡 Économisez jusqu'à {formatEur(savings)}/mois
+          {savings != null && savings > 0 ? (
+            <View className="mt-1 flex-row items-center gap-1 rounded-lg bg-success/10 px-2 py-1 self-start">
+              <Sparkles size={12} color={palette.success} />
+              <Text className="text-xs text-success font-medium">
+                -{formatMoney(savings, currency)}/mois
               </Text>
             </View>
-          )}
+          ) : null}
         </View>
-        <Text className="ml-2 font-bold text-slate-900">{formatEur(charge.amount)}</Text>
+        <Text className="ml-2 text-foreground font-display-bold">
+          {formatMoney(charge.amount, currency)}
+        </Text>
       </View>
     </Card>
   );
 }
 
 export default function ChargesTab() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, isLoading, isError, refetch, isRefetching } = useBudgetData(id!);
+  const budget = useBudget(id!);
+  const env = useBudgetData(id!);
 
-  if (isLoading) return <LoadingScreen />;
-  if (isError || !data) return <ErrorScreen onRetry={refetch} />;
+  if (env.isLoading) return <LoadingScreen />;
+  if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
 
-  const totalSavings = data.charges.reduce(
-    (acc, c) => acc + (c.market_suggestion?.savings_potential ?? 0),
-    0,
-  );
+  const data = env.data.data ?? {};
+  const currency = budget.data?.currency ?? 'EUR';
+  const charges = (data.charges ?? []) as Charge[];
+  const totalExpenses = data.total_expenses ?? charges.reduce((s, c) => s + (c.amount ?? 0), 0);
+  const totalSavings  = charges.reduce((s, c) => s + (c.market_suggestion?.savings_potential ?? 0), 0);
 
   return (
     <FlatList
-      data={data.charges}
+      data={charges}
       keyExtractor={(c) => c.id}
       contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
-      renderItem={({ item }) => <ChargeRow charge={item} />}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#6366f1" />}
+      renderItem={({ item }) => <ChargeRow charge={item} currency={currency} />}
+      refreshControl={
+        <RefreshControl refreshing={env.isRefetching} onRefresh={env.refetch} tintColor={palette.primary} />
+      }
       ListHeaderComponent={
         <View className="mb-4">
           <View className="flex-row items-center justify-between">
-            <Text className="text-base font-bold text-slate-800">
-              {data.charges.length} charge{data.charges.length > 1 ? 's' : ''}
+            <Text className="text-base text-foreground font-display-semibold">
+              {charges.length} {t('budget.charges.title').toLowerCase()}
             </Text>
-            <Text className="font-bold text-danger">
-              {formatEur(data.total_expenses)} / mois
+            <Text className="text-danger font-display-bold">
+              {formatMoney(totalExpenses, currency)}
             </Text>
           </View>
-          {totalSavings > 0 && (
-            <Card className="mt-3 bg-green-50" padding="sm">
-              <Text className="text-sm font-semibold text-green-700">
-                💡 Potentiel d'économies détecté : {formatEur(totalSavings)}/mois
-              </Text>
+          {totalSavings > 0 ? (
+            <Card className="mt-3 bg-success/10" padding="sm">
+              <View className="flex-row items-center gap-2">
+                <Sparkles size={16} color={palette.success} />
+                <Text className="text-sm text-success font-display-semibold">
+                  -{formatMoney(totalSavings, currency)} / mois
+                </Text>
+              </View>
             </Card>
-          )}
+          ) : null}
         </View>
       }
       ListEmptyComponent={
         <Card className="items-center py-10">
-          <Text className="text-3xl">💳</Text>
-          <Text className="mt-3 text-sm text-slate-400">Aucune charge enregistrée</Text>
+          <CreditCard size={32} color={palette.light.mutedFg} />
+          <Text className="mt-3 text-sm text-muted-fg font-sans">{t('common.empty')}</Text>
         </Card>
       }
     />

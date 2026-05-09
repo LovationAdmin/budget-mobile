@@ -1,52 +1,56 @@
 import '../global.css';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import {
-  PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
-  useFonts,
 } from '@expo-google-fonts/plus-jakarta-sans';
+import {
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+  DMSans_700Bold,
+} from '@expo-google-fonts/dm-sans';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+import Toast from 'react-native-toast-message';
 
 import { QueryProvider } from '@/contexts/QueryProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { NotificationsService } from '@/services/notifications.service';
+import { initI18n } from '@/i18n';
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
+  const [i18nReady, setI18nReady] = useState(false);
   const [fontsLoaded] = useFonts({
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_500Medium,
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
-    PlusJakartaSans_800ExtraBold,
+    DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold,
+    PlusJakartaSans_500Medium, PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+  useEffect(() => { initI18n().then(() => setI18nReady(true)); }, []);
 
   useEffect(() => {
-    NotificationsService.register();
-  }, []);
+    if (fontsLoaded && i18nReady) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded, i18nReady]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !i18nReady) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryProvider>
           <AuthProvider>
-            <Stack screenOptions={{ headerShown: false }} />
+            <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
             <StatusBar style="auto" />
+            <Toast />
           </AuthProvider>
         </QueryProvider>
       </SafeAreaProvider>

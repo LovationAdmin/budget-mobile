@@ -1,19 +1,15 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Modal,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
+  View, Text, FlatList, TouchableOpacity, Modal, Alert,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { X, Plus } from 'lucide-react-native';
 
 import { useBudget } from '@/hooks/useBudget';
 import { BudgetService } from '@/services/budget.service';
@@ -23,50 +19,43 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { QUERY_KEYS } from '@/constants/api';
+import { palette } from '@/constants/colors';
 import type { BudgetMember } from '@/types';
 
-const inviteSchema = z.object({
-  email: z.string().email('Email invalide'),
-  role:  z.enum(['admin', 'member', 'viewer']),
-});
+const inviteSchema = z.object({ email: z.string().email() });
 type InviteForm = z.infer<typeof inviteSchema>;
-
-const ROLE_LABELS: Record<string, string> = {
-  owner:  '👑 Propriétaire',
-  admin:  '🛡 Admin',
-  member: '👤 Membre',
-  viewer: '👁 Lecteur',
-};
 
 function MemberRow({ member, onRemove, canRemove }: {
   member: BudgetMember;
   onRemove: () => void;
   canRemove: boolean;
 }) {
+  const { t } = useTranslation();
   return (
-    <View className="mb-2 flex-row items-center">
-      <View className="h-10 w-10 items-center justify-center rounded-full bg-primary-100">
-        <Text className="font-bold text-primary-700">
-          {member.name.charAt(0).toUpperCase()}
+    <View className="flex-row items-center">
+      <View className="h-10 w-10 items-center justify-center rounded-full bg-warm-100">
+        <Text className="font-display-bold text-warm-700">
+          {(member.user_name ?? '?').charAt(0).toUpperCase()}
         </Text>
       </View>
       <View className="ml-3 flex-1">
-        <Text className="font-semibold text-slate-900">{member.name}</Text>
-        <Text className="text-xs text-slate-400">{member.email}</Text>
+        <Text className="text-foreground font-display-semibold">{member.user_name}</Text>
+        <Text className="text-xs text-muted-fg font-sans">{member.user_email}</Text>
       </View>
-      <View className="flex-row items-center gap-2">
-        <Text className="text-xs text-slate-500">{ROLE_LABELS[member.role] ?? member.role}</Text>
-        {canRemove && (
-          <TouchableOpacity onPress={onRemove} className="ml-1 p-1">
-            <Text className="text-danger text-lg">×</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <Text className="mr-2 text-xs text-muted-fg font-sans">
+        {member.role === 'owner' ? t('budget.members.owner') : member.role}
+      </Text>
+      {canRemove ? (
+        <TouchableOpacity onPress={onRemove} className="p-1">
+          <X size={18} color={palette.danger} />
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
 
 export default function MembersTab() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: budget, isLoading, isError, refetch } = useBudget(id!);
   const qc = useQueryClient();
@@ -74,10 +63,7 @@ export default function MembersTab() {
   const [inviteError, setInviteError] = useState<string | null>(null);
 
   const { control, handleSubmit, reset, formState: { errors, isSubmitting } } =
-    useForm<InviteForm>({
-      resolver: zodResolver(inviteSchema),
-      defaultValues: { role: 'member' },
-    });
+    useForm<InviteForm>({ resolver: zodResolver(inviteSchema) });
 
   const removeMutation = useMutation({
     mutationFn: ({ memberId }: { memberId: string }) =>
@@ -91,31 +77,30 @@ export default function MembersTab() {
   const onInvite = async (data: InviteForm) => {
     setInviteError(null);
     try {
-      await BudgetService.invite(id!, data.email, data.role);
-      reset();
-      setShowInvite(false);
-    } catch (e: any) {
-      setInviteError(e?.response?.data?.message ?? 'Erreur lors de l\'invitation.');
+      await BudgetService.invite(id!, data.email);
+      reset(); setShowInvite(false);
+    } catch (e: unknown) {
+      const apiErr = (e as { response?: { data?: { error?: string } } }).response?.data;
+      setInviteError(apiErr?.error ?? t('errors.validation'));
     }
   };
 
   const handleRemove = (member: BudgetMember) => {
     Alert.alert(
-      'Retirer le membre',
-      `Voulez-vous retirer ${member.name} du budget ?`,
+      t('budget.members.removeConfirm'),
+      member.user_name,
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Retirer',
-          style: 'destructive',
-          onPress: () => removeMutation.mutate({ memberId: member.user_id }),
+          text: t('budget.members.remove'), style: 'destructive',
+          onPress: () => removeMutation.mutate({ memberId: member.id }),
         },
       ],
     );
   };
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-background">
       <FlatList
         data={budget.members}
         keyExtractor={(m) => m.id}
@@ -124,83 +109,58 @@ export default function MembersTab() {
           <Card padding="sm">
             <MemberRow
               member={item}
-              canRemove={item.role !== 'owner'}
+              canRemove={item.role !== 'owner' && budget.is_owner}
               onRemove={() => handleRemove(item)}
             />
           </Card>
         )}
         ListHeaderComponent={
           <View className="mb-4 flex-row items-center justify-between">
-            <Text className="text-base font-bold text-slate-800">
-              {budget.members.length} membre{budget.members.length > 1 ? 's' : ''}
+            <Text className="text-base text-foreground font-display-semibold">
+              {budget.members.length} {t('budget.members.title').toLowerCase()}
             </Text>
-            <Button size="sm" onPress={() => setShowInvite(true)}>
-              + Inviter
-            </Button>
+            {budget.is_owner ? (
+              <TouchableOpacity
+                onPress={() => setShowInvite(true)}
+                className="flex-row items-center rounded-xl bg-warm-500 px-3 py-2"
+              >
+                <Plus size={16} color="#FFF" />
+                <Text className="ml-1 text-sm text-white font-display-semibold">
+                  {t('budget.members.invite')}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         }
       />
 
-      {/* Invite modal */}
       <Modal visible={showInvite} animationType="slide" transparent>
         <View className="flex-1 justify-end bg-black/40">
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View className="rounded-t-3xl bg-white px-5 pb-10 pt-6">
+            <View className="rounded-t-3xl bg-card px-5 pb-10 pt-6">
               <View className="mb-5 flex-row items-center justify-between">
-                <Text className="text-xl font-bold text-slate-900">Inviter un membre</Text>
+                <Text className="text-xl text-foreground font-display-bold">
+                  {t('budget.members.invite')}
+                </Text>
                 <TouchableOpacity onPress={() => { setShowInvite(false); reset(); }}>
-                  <Text className="text-2xl text-slate-400">×</Text>
+                  <X size={22} color={palette.light.mutedFg} />
                 </TouchableOpacity>
               </View>
 
-              <Controller
-                control={control}
-                name="email"
+              <Controller control={control} name="email"
                 render={({ field: { onChange, value, onBlur } }) => (
-                  <Input
-                    label="Email"
-                    placeholder="ami@exemple.com"
+                  <Input label={t('auth.email')} placeholder="ami@exemple.com"
                     keyboardType="email-address"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    error={errors.email?.message}
-                    autoFocus
-                  />
-                )}
-              />
+                    value={value} onChangeText={onChange} onBlur={onBlur}
+                    error={errors.email?.message} autoFocus />
+                )} />
 
-              <Text className="mb-2 text-sm font-medium text-slate-700">Rôle</Text>
-              <Controller
-                control={control}
-                name="role"
-                render={({ field: { onChange, value } }) => (
-                  <View className="mb-4 flex-row gap-2">
-                    {(['member', 'viewer', 'admin'] as const).map((r) => (
-                      <TouchableOpacity
-                        key={r}
-                        onPress={() => onChange(r)}
-                        className={`flex-1 rounded-xl border py-2 items-center ${
-                          value === r ? 'border-primary-600 bg-primary-50' : 'border-border bg-white'
-                        }`}
-                      >
-                        <Text className={`text-xs font-semibold ${
-                          value === r ? 'text-primary-600' : 'text-slate-500'
-                        }`}>
-                          {ROLE_LABELS[r]}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              />
-
-              {inviteError && (
-                <Text className="mb-3 text-sm text-danger">{inviteError}</Text>
-              )}
+              {inviteError ? (
+                <Text className="mb-3 text-sm text-danger font-sans">{inviteError}</Text>
+              ) : null}
 
               <Button onPress={handleSubmit(onInvite)} loading={isSubmitting} size="lg">
-                Envoyer l'invitation
+                {t('budget.members.invite')}
               </Button>
             </View>
           </KeyboardAvoidingView>

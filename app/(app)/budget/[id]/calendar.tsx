@@ -2,54 +2,63 @@ import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { format, parseISO, isSameMonth, addMonths, subMonths } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react-native';
 
-import { useBudgetData } from '@/hooks/useBudget';
+import { useBudget, useBudgetData } from '@/hooks/useBudget';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
-import { COLORS } from '@/constants/colors';
+import { palette } from '@/constants/colors';
 import type { CalendarEntry } from '@/types';
 
-function formatEur(n: number) {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
+function formatMoney(n: number, currency = 'EUR') {
+  try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n); }
+  catch { return `${n.toFixed(2)} ${currency}`; }
 }
 
-function EntryRow({ entry }: { entry: CalendarEntry }) {
+function EntryRow({ entry, currency }: { entry: CalendarEntry; currency: string }) {
+  const { i18n } = useTranslation();
+  const locale = i18n.language === 'fr' ? fr : enUS;
   const isIncome = entry.type === 'income';
   return (
-    <View className="mb-1.5 flex-row items-center justify-between rounded-xl bg-white px-4 py-3"
-      style={{ shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 }}>
-      <View className="flex-1">
-        <Text className="text-sm font-medium text-slate-800">{entry.label}</Text>
-        <Text className="text-xs text-slate-400">
-          {format(parseISO(entry.date), 'd MMM', { locale: fr })}
+    <Card className="mb-1.5" padding="sm">
+      <View className="flex-row items-center justify-between">
+        <View className="flex-1">
+          <Text className="text-sm text-foreground font-display-semibold">{entry.label}</Text>
+          <Text className="text-xs text-muted-fg font-sans">
+            {format(parseISO(entry.date), 'd MMM', { locale })}
+          </Text>
+        </View>
+        <Text
+          className="text-sm font-display-bold"
+          style={{ color: isIncome ? palette.success : palette.danger }}
+        >
+          {isIncome ? '+' : '-'}{formatMoney(Math.abs(entry.amount), currency)}
         </Text>
       </View>
-      <Text
-        className="text-sm font-bold"
-        style={{ color: isIncome ? COLORS.success : COLORS.danger }}
-      >
-        {isIncome ? '+' : '-'}{formatEur(Math.abs(entry.amount))}
-      </Text>
-    </View>
+    </Card>
   );
 }
 
 export default function CalendarTab() {
+  const { t, i18n } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, isLoading, isError, refetch, isRefetching } = useBudgetData(id!);
+  const budget = useBudget(id!);
+  const env = useBudgetData(id!);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  if (isLoading) return <LoadingScreen />;
-  if (isError || !data) return <ErrorScreen onRetry={refetch} />;
+  if (env.isLoading) return <LoadingScreen />;
+  if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
 
-  const entries = (data.calendar_entries ?? []).filter((e) =>
-    isSameMonth(parseISO(e.date), currentMonth),
-  );
-  const sorted = [...entries].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-  );
+  const allEntries = (env.data.data?.calendar_entries ?? []) as CalendarEntry[];
+  const currency = budget.data?.currency ?? 'EUR';
+  const locale = i18n.language === 'fr' ? fr : enUS;
+
+  const sorted = allEntries
+    .filter((e) => isSameMonth(parseISO(e.date), currentMonth))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const monthIncome   = sorted.filter((e) => e.type === 'income').reduce((a, e) => a + e.amount, 0);
   const monthExpenses = sorted.filter((e) => e.type === 'expense').reduce((a, e) => a + e.amount, 0);
@@ -59,41 +68,35 @@ export default function CalendarTab() {
       data={sorted}
       keyExtractor={(e) => e.id}
       contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
-      renderItem={({ item }) => <EntryRow entry={item} />}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#6366f1" />}
+      renderItem={({ item }) => <EntryRow entry={item} currency={currency} />}
+      refreshControl={
+        <RefreshControl refreshing={env.isRefetching} onRefresh={env.refetch} tintColor={palette.primary} />
+      }
       ListHeaderComponent={
         <View className="mb-4">
-          {/* Month navigator */}
           <View className="mb-3 flex-row items-center justify-between">
-            <TouchableOpacity
-              onPress={() => setCurrentMonth((m) => subMonths(m, 1))}
-              className="p-2"
-            >
-              <Text className="text-xl text-slate-500">‹</Text>
+            <TouchableOpacity onPress={() => setCurrentMonth((m) => subMonths(m, 1))} className="p-2">
+              <ChevronLeft size={20} color={palette.light.foreground} />
             </TouchableOpacity>
-            <Text className="text-base font-bold capitalize text-slate-900">
-              {format(currentMonth, 'MMMM yyyy', { locale: fr })}
+            <Text className="text-base text-foreground capitalize font-display-bold">
+              {format(currentMonth, 'MMMM yyyy', { locale })}
             </Text>
-            <TouchableOpacity
-              onPress={() => setCurrentMonth((m) => addMonths(m, 1))}
-              className="p-2"
-            >
-              <Text className="text-xl text-slate-500">›</Text>
+            <TouchableOpacity onPress={() => setCurrentMonth((m) => addMonths(m, 1))} className="p-2">
+              <ChevronRight size={20} color={palette.light.foreground} />
             </TouchableOpacity>
           </View>
 
-          {/* Month summary */}
           <View className="flex-row gap-3">
-            <Card className="flex-1 items-center py-3" padding="none">
-              <Text className="text-xs text-slate-400">Revenus</Text>
-              <Text className="mt-0.5 text-base font-bold text-success">
-                {formatEur(monthIncome)}
+            <Card className="flex-1 items-center" padding="sm">
+              <Text className="text-xs text-muted-fg font-sans">{t('budget.overview.income')}</Text>
+              <Text className="mt-0.5 text-base text-success font-display-bold">
+                {formatMoney(monthIncome, currency)}
               </Text>
             </Card>
-            <Card className="flex-1 items-center py-3" padding="none">
-              <Text className="text-xs text-slate-400">Dépenses</Text>
-              <Text className="mt-0.5 text-base font-bold text-danger">
-                {formatEur(monthExpenses)}
+            <Card className="flex-1 items-center" padding="sm">
+              <Text className="text-xs text-muted-fg font-sans">{t('budget.overview.expenses')}</Text>
+              <Text className="mt-0.5 text-base text-danger font-display-bold">
+                {formatMoney(monthExpenses, currency)}
               </Text>
             </Card>
           </View>
@@ -101,8 +104,8 @@ export default function CalendarTab() {
       }
       ListEmptyComponent={
         <Card className="items-center py-10">
-          <Text className="text-3xl">📅</Text>
-          <Text className="mt-3 text-sm text-slate-400">Aucune entrée ce mois-ci</Text>
+          <CalendarDays size={32} color={palette.light.mutedFg} />
+          <Text className="mt-3 text-sm text-muted-fg font-sans">{t('common.empty')}</Text>
         </Card>
       }
     />

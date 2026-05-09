@@ -1,110 +1,126 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { VictoryPie } from 'victory-native';
 
-import { useBudgetData } from '@/hooks/useBudget';
+import { useBudget, useBudgetData } from '@/hooks/useBudget';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
-import { CATEGORY_COLORS, CATEGORY_LABELS, COLORS } from '@/constants/colors';
+import { CATEGORY_COLORS, palette } from '@/constants/colors';
+import type { Charge, IncomeSource } from '@/types';
 
-function formatEur(n: number) {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
+function formatMoney(n: number, currency = 'EUR') {
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n);
+  } catch { return `${n.toFixed(2)} ${currency}`; }
 }
 
 function StatBox({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <View className="flex-1 items-center rounded-2xl bg-white p-4"
-      style={{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 }}>
-      <Text className="mb-1 text-xs font-medium text-slate-500">{label}</Text>
-      <Text className="text-xl font-bold" style={{ color }}>{value}</Text>
-    </View>
+    <Card className="flex-1 items-center" padding="md">
+      <Text className="mb-1 text-xs text-muted-fg font-medium">{label}</Text>
+      <Text className="text-xl font-display-bold" style={{ color }}>{value}</Text>
+    </Card>
   );
 }
 
 export default function OverviewTab() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, isLoading, isError, refetch, isRefetching } = useBudgetData(id!);
+  const budget = useBudget(id!);
+  const env = useBudgetData(id!);
 
-  if (isLoading) return <LoadingScreen />;
-  if (isError || !data) return <ErrorScreen onRetry={refetch} />;
+  if (env.isLoading || budget.isLoading) return <LoadingScreen />;
+  if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
 
-  // Build pie chart data by category
-  const byCategory = data.charges.reduce<Record<string, number>>((acc, c) => {
-    acc[c.category] = (acc[c.category] ?? 0) + c.amount;
-    return acc;
-  }, {});
+  const data = env.data.data ?? {};
+  const currency = budget.data?.currency ?? 'EUR';
+  const charges  = (data.charges ?? []) as Charge[];
+  const incomes  = (data.income_sources ?? []) as IncomeSource[];
 
-  const pieData = Object.entries(byCategory).map(([cat, amount]) => ({
-    x: CATEGORY_LABELS[cat] ?? cat,
-    y: amount,
-    color: CATEGORY_COLORS[cat] ?? '#94a3b8',
-  }));
+  const totalIncome   = data.total_income   ?? incomes.reduce((s, i) => s + (i.amount ?? 0), 0);
+  const totalExpenses = data.total_expenses ?? charges.reduce((s, c) => s + (c.amount ?? 0), 0);
+  const balance       = data.balance        ?? totalIncome - totalExpenses;
+  const balanceColor  = balance >= 0 ? palette.success : palette.danger;
 
-  const balance = data.total_income - data.total_expenses;
-  const balanceColor = balance >= 0 ? COLORS.success : COLORS.danger;
+  const pieData = useMemo(() => {
+    const byCat = charges.reduce<Record<string, number>>((acc, c) => {
+      const k = String(c.category);
+      acc[k] = (acc[k] ?? 0) + (c.amount ?? 0);
+      return acc;
+    }, {});
+    return Object.entries(byCat).map(([k, amount]) => ({
+      x: t(`categories.${k}`, { defaultValue: k }),
+      y: amount,
+      color: CATEGORY_COLORS[k] ?? palette.light.mutedFg,
+    }));
+  }, [charges, t]);
 
   return (
     <ScrollView
       className="flex-1"
       contentContainerStyle={{ padding: 16, gap: 12 }}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#6366f1" />}
+      refreshControl={
+        <RefreshControl refreshing={env.isRefetching} onRefresh={env.refetch} tintColor={palette.primary} />
+      }
     >
-      {/* KPI row */}
       <View className="flex-row gap-3">
-        <StatBox label="Revenus" value={formatEur(data.total_income)} color={COLORS.success} />
-        <StatBox label="Charges" value={formatEur(data.total_expenses)} color={COLORS.danger} />
+        <StatBox label={t('budget.overview.income')}   value={formatMoney(totalIncome, currency)}   color={palette.success} />
+        <StatBox label={t('budget.overview.expenses')} value={formatMoney(totalExpenses, currency)} color={palette.danger}  />
       </View>
-      <Card className="items-center py-3">
-        <Text className="text-sm font-medium text-slate-500">Solde mensuel</Text>
-        <Text className="mt-1 text-3xl font-extrabold" style={{ color: balanceColor }}>
-          {formatEur(balance)}
+
+      <Card className="items-center" padding="md">
+        <Text className="text-sm text-muted-fg font-medium">{t('budget.overview.balance')}</Text>
+        <Text className="mt-1 text-3xl font-display-extra" style={{ color: balanceColor }}>
+          {formatMoney(balance, currency)}
         </Text>
       </Card>
 
-      {/* Pie chart */}
-      {pieData.length > 0 && (
+      {pieData.length > 0 ? (
         <Card>
-          <Text className="mb-2 text-sm font-semibold text-slate-700">Répartition des charges</Text>
+          <Text className="mb-2 text-sm text-foreground font-display-semibold">
+            {t('budget.overview.monthlyBreakdown')}
+          </Text>
           <View className="items-center">
             <VictoryPie
               data={pieData}
-              width={280}
-              height={220}
+              width={280} height={220}
               colorScale={pieData.map((d) => d.color)}
-              innerRadius={50}
-              padAngle={2}
-              labels={({ datum }) => `${Math.round((datum.y / data.total_expenses) * 100)}%`}
-              style={{
-                labels: { fontSize: 11, fill: '#64748b', fontWeight: '600' },
-              }}
+              innerRadius={50} padAngle={2}
+              labels={({ datum }: { datum: { y: number } }) =>
+                `${Math.round((datum.y / Math.max(totalExpenses, 1)) * 100)}%`
+              }
+              style={{ labels: { fontSize: 11, fill: palette.light.mutedFg, fontWeight: '600' } }}
             />
           </View>
-          {/* Legend */}
           <View className="mt-2 flex-row flex-wrap gap-2">
             {pieData.map((d) => (
               <View key={d.x} className="flex-row items-center gap-1">
                 <View className="h-3 w-3 rounded-full" style={{ backgroundColor: d.color }} />
-                <Text className="text-xs text-slate-500">{d.x}</Text>
+                <Text className="text-xs text-muted-fg font-sans">{d.x}</Text>
               </View>
             ))}
           </View>
         </Card>
-      )}
+      ) : null}
 
-      {/* Income sources */}
-      {data.income_sources.length > 0 && (
+      {incomes.length > 0 ? (
         <Card>
-          <Text className="mb-3 text-sm font-semibold text-slate-700">Sources de revenus</Text>
-          {data.income_sources.map((s) => (
+          <Text className="mb-3 text-sm text-foreground font-display-semibold">
+            {t('budget.overview.income')}
+          </Text>
+          {incomes.map((s) => (
             <View key={s.id} className="mb-2 flex-row items-center justify-between">
-              <Text className="text-sm text-slate-700">{s.label}</Text>
-              <Text className="text-sm font-semibold text-success">{formatEur(s.amount)}</Text>
+              <Text className="text-sm text-foreground font-sans">{s.label}</Text>
+              <Text className="text-sm text-success font-display-semibold">
+                {formatMoney(s.amount ?? 0, currency)}
+              </Text>
             </View>
           ))}
         </Card>
-      )}
+      ) : null}
     </ScrollView>
   );
 }

@@ -4,12 +4,12 @@ import type { User } from '@/types';
 
 export const UserService = {
   async getProfile(): Promise<User> {
-    const { data } = await api.get(ENDPOINTS.PROFILE);
+    const { data } = await api.get<User>(ENDPOINTS.PROFILE);
     return data;
   },
 
-  async updateProfile(payload: Partial<Pick<User, 'name' | 'avatar_url'>>): Promise<User> {
-    const { data } = await api.put(ENDPOINTS.PROFILE, payload);
+  async updateProfile(payload: Partial<Pick<User, 'name' | 'avatar'>>): Promise<User> {
+    const { data } = await api.put<User>(ENDPOINTS.PROFILE, payload);
     return data;
   },
 
@@ -19,5 +19,10 @@ export const UserService = {
 
   async deleteAccount(password: string): Promise<void> {
     await api.delete(ENDPOINTS.DELETE_ACCOUNT, { data: { password } });
+  },
+
+  async exportData(): Promise<unknown> {
+    const { data } = await api.get(ENDPOINTS.EXPORT_DATA);
+    return data;
   },
 };

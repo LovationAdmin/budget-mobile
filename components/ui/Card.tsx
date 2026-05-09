@@ -7,17 +7,20 @@ interface CardProps extends ViewProps {
 }
 
 const paddingClasses = {
-  none: '',
-  sm:   'p-3',
-  md:   'p-4',
-  lg:   'p-6',
+  none: '', sm: 'p-3', md: 'p-4', lg: 'p-6',
 };
 
 export function Card({ children, padding = 'md', className, ...props }: CardProps) {
   return (
     <View
-      className={`rounded-2xl bg-white shadow-sm ${paddingClasses[padding]} ${className ?? ''}`}
-      style={{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}
+      className={`rounded-2xl bg-card border border-border ${paddingClasses[padding]} ${className ?? ''}`}
+      style={{
+        shadowColor: '#0F172A',
+        shadowOpacity: 0.04,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 1,
+      }}
       {...props}
     >
       {children}

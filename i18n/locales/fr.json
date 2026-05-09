@@ -1,0 +1,150 @@
+{
+  "app": {
+    "name": "BudgetFamille",
+    "tagline": "Le budget familial, simple et collaboratif"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "next": "Suivant",
+    "loading": "Chargement…",
+    "retry": "Réessayer",
+    "search": "Rechercher",
+    "empty": "Aucun élément",
+    "error": "Une erreur est survenue",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "auth": {
+    "loginTitle": "Connexion",
+    "loginSubtitle": "Heureux de vous revoir",
+    "signupTitle": "Créer un compte",
+    "signupSubtitle": "C'est parti pour gérer votre budget en famille",
+    "email": "Adresse email",
+    "password": "Mot de passe",
+    "name": "Nom complet",
+    "totpCode": "Code à 6 chiffres",
+    "submit": "Se connecter",
+    "submitSignup": "Créer mon compte",
+    "magicLinkButton": "Recevoir un lien magique",
+    "magicLinkRequested": "Un lien de connexion vous a été envoyé. Vérifiez vos emails.",
+    "verifyMagicLink": "Vérification du lien…",
+    "noAccount": "Pas encore de compte ?",
+    "haveAccount": "Déjà un compte ?",
+    "createAccount": "Créer un compte",
+    "signin": "Se connecter",
+    "forgotPassword": "Mot de passe oublié ?",
+    "forgotTitle": "Mot de passe oublié",
+    "forgotSubtitle": "Entrez votre email, nous vous enverrons un lien pour réinitialiser.",
+    "forgotSubmit": "Envoyer le lien",
+    "forgotSent": "Si un compte existe pour cette adresse, un email a été envoyé.",
+    "tfaTitle": "Authentification à deux facteurs",
+    "tfaSubtitle": "Saisissez le code à 6 chiffres affiché par votre application",
+    "emailNotVerified": "Email non vérifié. Vérifiez votre boîte mail.",
+    "resendVerification": "Renvoyer l'email de vérification"
+  },
+  "biometric": {
+    "title": "Déverrouiller",
+    "subtitle": "Utilisez votre empreinte ou votre visage pour ouvrir BudgetFamille.",
+    "useBiometric": "Déverrouiller",
+    "useFallback": "Se reconnecter avec mot de passe",
+    "promptReason": "Authentification BudgetFamille",
+    "enableTitle": "Activer le déverrouillage biométrique ?",
+    "enableSubtitle": "Vous n'aurez plus besoin de saisir votre mot de passe à chaque ouverture.",
+    "enable": "Activer",
+    "later": "Plus tard"
+  },
+  "dashboard": {
+    "greeting": "Bonjour {{name}}",
+    "yourBudgets": "Vos budgets",
+    "newBudget": "Nouveau budget",
+    "createBudget": "Créer un budget",
+    "budgetName": "Nom du budget",
+    "budgetCurrency": "Devise",
+    "empty": "Aucun budget pour l'instant. Créez votre premier !",
+    "createFirst": "Créer mon premier budget"
+  },
+  "budget": {
+    "tabs": {
+      "overview": "Vue d'ensemble",
+      "members": "Membres",
+      "charges": "Charges",
+      "projects": "Projets",
+      "calendar": "Calendrier",
+      "reality": "Réalité"
+    },
+    "overview": {
+      "income": "Revenus",
+      "expenses": "Dépenses",
+      "balance": "Solde",
+      "savings": "Épargne",
+      "monthlyBreakdown": "Répartition mensuelle"
+    },
+    "members": {
+      "title": "Membres",
+      "invite": "Inviter par email",
+      "inviteSent": "Invitation envoyée",
+      "remove": "Retirer du budget",
+      "removeConfirm": "Retirer ce membre du budget ?",
+      "owner": "Propriétaire",
+      "pending": "En attente"
+    },
+    "charges": {
+      "title": "Charges récurrentes",
+      "addCharge": "Ajouter une charge",
+      "label": "Libellé",
+      "amount": "Montant",
+      "category": "Catégorie",
+      "totalMonthly": "Total mensuel"
+    },
+    "projects": {
+      "title": "Projets d'épargne",
+      "add": "Nouveau projet",
+      "target": "Objectif",
+      "saved": "Économisé"
+    },
+    "calendar": {
+      "title": "Calendrier",
+      "month": "Mois",
+      "addEntry": "Ajouter une ligne"
+    },
+    "reality": {
+      "title": "Réalité bancaire",
+      "connectBank": "Connecter ma banque",
+      "noConnection": "Aucune banque connectée",
+      "syncing": "Synchronisation…",
+      "savingsPool": "Compte d'épargne",
+      "totalReal": "Total réel"
+    }
+  },
+  "categories": {
+    "housing": "Logement",
+    "transport": "Transport",
+    "food": "Alimentation",
+    "health": "Santé",
+    "education": "Éducation",
+    "leisure": "Loisirs",
+    "savings": "Épargne",
+    "other": "Autre"
+  },
+  "profile": {
+    "title": "Profil",
+    "language": "Langue",
+    "biometric": "Déverrouillage biométrique",
+    "twoFactor": "Authentification à deux facteurs",
+    "logout": "Se déconnecter",
+    "logoutAll": "Déconnecter tous les appareils",
+    "deleteAccount": "Supprimer mon compte",
+    "exportData": "Exporter mes données"
+  },
+  "errors": {
+    "network": "Connexion impossible. Vérifiez votre réseau.",
+    "invalid_credentials": "Email ou mot de passe incorrect.",
+    "session_expired": "Votre session a expiré, reconnectez-vous.",
+    "validation": "Vérifiez les informations saisies."
+  }
+}
