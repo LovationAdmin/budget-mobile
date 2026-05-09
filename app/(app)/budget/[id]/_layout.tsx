@@ -8,6 +8,7 @@ import {
 } from 'lucide-react-native';
 
 import { useBudget } from '@/hooks/useBudget';
+import { useBudgetSocket } from '@/hooks/useBudgetSocket';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { palette } from '@/constants/colors';
@@ -27,6 +28,9 @@ export default function BudgetLayout() {
   const router = useRouter();
   const pathname = usePathname();
   const { data: budget, isLoading, isError, refetch } = useBudget(id!);
+
+  // Subscribe to realtime updates while this layout is mounted.
+  useBudgetSocket(id);
 
   if (isLoading) return <LoadingScreen message={t('common.loading')} />;
   if (isError || !budget) return <ErrorScreen onRetry={refetch} />;

@@ -5,13 +5,13 @@ import { AuthService } from '@/services/auth.service';
 import { UserService } from '@/services/user.service';
 import { BiometricService } from '@/services/biometric.service';
 import { NotificationsService } from '@/services/notifications.service';
+import { reportError } from '@/services/sentry';
 import type { User, LoginRequest, LoginResponse, SignupRequest } from '@/types';
 
 interface AuthState {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  /** True between app launch and biometric prompt success when biometric is enabled. */
   isLocked: boolean;
 
   login:    (payload: LoginRequest) => Promise<LoginResponse>;
@@ -19,12 +19,10 @@ interface AuthState {
   logout:   () => Promise<void>;
   refreshUser: () => Promise<void>;
 
-  // Magic link
   requestMagicLink: (email: string) => Promise<void>;
   verifyMagicLink:  (token: string) => Promise<void>;
 
-  // Biometric
-  unlock:        () => Promise<boolean>;
+  unlock:           () => Promise<boolean>;
   enableBiometric:  () => Promise<boolean>;
   disableBiometric: () => Promise<void>;
   biometricEnabled: boolean;
@@ -38,18 +36,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLocked, setIsLocked] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  // ── Boot ────────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
-        const hasSession = await AuthService.hasSession() || !!(await AuthService.getStoredAccessToken());
-        if (!hasSession) return;
+        const access = await AuthService.getStoredAccessToken();
+        const refresh = await AuthService.getStoredRefreshToken();
+        if (!access && !refresh) return;
 
         const bioOpt = await BiometricService.isEnabled();
         setBiometricEnabled(bioOpt);
 
         if (bioOpt && (await BiometricService.isAvailable())) {
-          // Defer profile fetch until unlock — keeps token unused until biometric pass.
           setIsLocked(true);
           return;
         }
@@ -57,7 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const profile = await UserService.getProfile();
         setUser(profile);
         NotificationsService.register();
-      } catch {
+      } catch (e) {
+        reportError(e, { stage: 'boot' });
         await AuthService.clearSession();
       } finally {
         setIsLoading(false);
@@ -73,7 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     NotificationsService.register();
   }, []);
 
-  // ── Public API ──────────────────────────────────────────────────────────
   const login = useCallback(async (payload: LoginRequest): Promise<LoginResponse> => {
     const resp = await AuthService.login(payload);
     await finalizeLogin(resp);
@@ -82,7 +79,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signup = useCallback(async (payload: SignupRequest) => {
     await AuthService.signup(payload);
-    // Backend requires email verification before login — caller routes to verify-email.
   }, []);
 
   const logout = useCallback(async () => {
@@ -112,11 +108,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const unlock = useCallback(async (): Promise<boolean> => {
     const ok = await BiometricService.prompt('Authentification BudgetFamille');
     if (!ok) return false;
-    const profile = await UserService.getProfile();
-    setUser(profile);
-    setIsLocked(false);
-    NotificationsService.register();
-    return true;
+    try {
+      const profile = await UserService.getProfile();
+      setUser(profile);
+      setIsLocked(false);
+      NotificationsService.register();
+      return true;
+    } catch (e) {
+      reportError(e, { stage: 'unlock' });
+      // Profile fetch failed — stale tokens. Sign the user out cleanly.
+      await AuthService.clearSession();
+      setIsLocked(false);
+      return false;
+    }
   }, []);
 
   const enableBiometric = useCallback(async (): Promise<boolean> => {

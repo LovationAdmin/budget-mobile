@@ -25,9 +25,15 @@ import { QueryProvider } from '@/contexts/QueryProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { initI18n } from '@/i18n';
 import { initSentry } from '@/services/sentry';
+import { useNotificationsListener } from '@/services/notifications-listener.service';
 
 initSentry();
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function NotificationsBridge() {
+  useNotificationsListener();
+  return null;
+}
 
 export default function RootLayout() {
   const [i18nReady, setI18nReady] = useState(false);
@@ -50,6 +56,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryProvider>
           <AuthProvider>
+            <NotificationsBridge />
             <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
               <Stack.Screen name="(auth)" />
               <Stack.Screen name="(app)" />
