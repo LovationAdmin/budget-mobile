@@ -12,7 +12,7 @@ import {
 
 import { Button } from '@/components/ui/Button';
 import { palette } from '@/constants/colors';
-import { markOnboarded } from '@/app/index';
+import { OnboardingService } from '@/services/onboarding.service';
 
 interface Slide {
   Icon: LucideIcon;
@@ -51,7 +51,7 @@ export default function Onboarding() {
   ];
 
   const finish = async () => {
-    await markOnboarded();
+    await OnboardingService.markCompleted();
     router.replace('/(auth)/login');
   };
 

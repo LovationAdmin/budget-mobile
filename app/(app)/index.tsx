@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, Modal, RefreshControl,
-  KeyboardAvoidingView, Platform,
+  View, Text, FlatList, TouchableOpacity, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
-import { Plus, X } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useBudgets, useCreateBudget } from '@/hooks/useBudgets';
@@ -18,6 +18,7 @@ import { ErrorScreen } from '@/components/ErrorScreen';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { palette } from '@/constants/colors';
 
 const createSchema = z.object({
@@ -40,9 +41,14 @@ export default function DashboardScreen() {
     });
 
   const onCreate = async (data: CreateForm) => {
-    await createMutation.mutateAsync({ name: data.name, currency: data.currency ?? 'EUR' });
-    reset({ currency: 'EUR' });
-    setShowCreate(false);
+    try {
+      await createMutation.mutateAsync({ name: data.name, currency: data.currency ?? 'EUR' });
+      reset({ currency: 'EUR' });
+      setShowCreate(false);
+      Toast.show({ type: 'success', text1: data.name });
+    } catch {
+      Toast.show({ type: 'error', text1: t('errors.network') });
+    }
   };
 
   if (isLoading) return <LoadingScreen message={t('common.loading')} />;
@@ -53,7 +59,9 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="px-5 pb-4 pt-6">
-        <Text className="text-sm text-muted-fg font-sans">{t('dashboard.greeting', { name: '' }).replace(/\{?\{?name\}?\}?/, '').trim()}</Text>
+        <Text className="text-sm text-muted-fg font-sans">
+          {t('dashboard.greeting', { name: '' }).replace(firstName, '').trim() || 'Bonjour'}
+        </Text>
         <Text className="text-2xl text-foreground font-display-bold">{firstName}</Text>
       </View>
 
@@ -70,7 +78,7 @@ export default function DashboardScreen() {
             <View className="mb-3 h-16 w-16 items-center justify-center rounded-2xl bg-warm-50">
               <Plus size={32} color={palette.warm} />
             </View>
-            <Text className="text-base text-foreground font-display-semibold">
+            <Text className="text-base text-foreground font-display-semibold text-center">
               {t('dashboard.empty')}
             </Text>
             <Button
@@ -101,43 +109,32 @@ export default function DashboardScreen() {
         }
       />
 
-      <Modal visible={showCreate} animationType="slide" transparent>
-        <View className="flex-1 justify-end bg-black/40">
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View className="rounded-t-3xl bg-card px-5 pb-10 pt-6">
-              <View className="mb-5 flex-row items-center justify-between">
-                <Text className="text-xl text-foreground font-display-bold">
-                  {t('dashboard.createBudget')}
-                </Text>
-                <TouchableOpacity onPress={() => { setShowCreate(false); reset(); }}>
-                  <X size={24} color={palette.light.mutedFg} />
-                </TouchableOpacity>
-              </View>
+      <BottomSheet
+        visible={showCreate}
+        onClose={() => { setShowCreate(false); reset({ currency: 'EUR' }); }}
+        title={t('dashboard.createBudget')}
+      >
+        <Controller control={control} name="name"
+          render={({ field: { onChange, value, onBlur } }) => (
+            <Input label={t('dashboard.budgetName')}
+              placeholder="Budget Famille 2025"
+              value={value} onChangeText={onChange} onBlur={onBlur}
+              error={errors.name?.message} autoFocus />
+          )} />
+        <Controller control={control} name="currency"
+          render={({ field: { onChange, value, onBlur } }) => (
+            <Input label={t('dashboard.budgetCurrency')}
+              placeholder="EUR"
+              autoCapitalize="characters"
+              maxLength={3}
+              value={value} onChangeText={onChange} onBlur={onBlur}
+              error={errors.currency?.message} />
+          )} />
 
-              <Controller control={control} name="name"
-                render={({ field: { onChange, value, onBlur } }) => (
-                  <Input label={t('dashboard.budgetName')}
-                    placeholder="Budget Famille 2025"
-                    value={value} onChangeText={onChange} onBlur={onBlur}
-                    error={errors.name?.message} autoFocus />
-                )} />
-              <Controller control={control} name="currency"
-                render={({ field: { onChange, value, onBlur } }) => (
-                  <Input label={t('dashboard.budgetCurrency')}
-                    placeholder="EUR"
-                    autoCapitalize="characters"
-                    maxLength={3}
-                    value={value} onChangeText={onChange} onBlur={onBlur}
-                    error={errors.currency?.message} />
-                )} />
-
-              <Button onPress={handleSubmit(onCreate)} loading={isSubmitting} size="lg">
-                {t('dashboard.createBudget')}
-              </Button>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
+        <Button onPress={handleSubmit(onCreate)} loading={isSubmitting} size="lg">
+          {t('dashboard.createBudget')}
+        </Button>
+      </BottomSheet>
     </SafeAreaView>
   );
 }

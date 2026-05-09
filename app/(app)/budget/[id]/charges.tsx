@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { CreditCard, Sparkles, Plus } from 'lucide-react-native';
+import { CreditCard, Sparkles, Plus, Wand2 } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
 
 import { useBudget, useBudgetData } from '@/hooks/useBudget';
 import { useBudgetMutations } from '@/hooks/useBudgetMutations';
@@ -10,6 +11,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
 import { ChargeFormSheet } from '@/components/forms/ChargeFormSheet';
+import { SuggestionsService } from '@/services/suggestions.service';
 import { CATEGORY_COLORS, palette } from '@/constants/colors';
 import type { Charge } from '@/types';
 
@@ -38,7 +40,9 @@ function ChargeRow({
               {charge.recurrence ? (
                 <>
                   <Text className="text-xs text-muted-fg/40">·</Text>
-                  <Text className="text-xs text-muted-fg font-sans">{charge.recurrence}</Text>
+                  <Text className="text-xs text-muted-fg font-sans">
+                    {t(`budget.charges.${charge.recurrence === 'one-time' ? 'oneTime' : charge.recurrence}`)}
+                  </Text>
                 </>
               ) : null}
             </View>
@@ -68,6 +72,7 @@ export default function ChargesTab() {
   const m      = useBudgetMutations(id!);
   const [editing, setEditing] = useState<Charge | undefined>(undefined);
   const [showForm, setShowForm] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   if (env.isLoading) return <LoadingScreen />;
   if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
@@ -77,6 +82,19 @@ export default function ChargesTab() {
   const charges = (data.charges ?? []) as Charge[];
   const totalExpenses = data.total_expenses ?? charges.reduce((s, c) => s + (c.amount ?? 0), 0);
   const totalSavings  = charges.reduce((s, c) => s + (c.market_suggestion?.savings_potential ?? 0), 0);
+
+  const handleBulkAnalyze = async () => {
+    setAnalyzing(true);
+    try {
+      const r = await SuggestionsService.bulkAnalyze(id!);
+      Toast.show({ type: 'success', text1: `AI · ${r.analyzed}` });
+      env.refetch();
+    } catch {
+      Toast.show({ type: 'error', text1: t('errors.network') });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   return (
     <View className="flex-1 bg-background">
@@ -104,6 +122,22 @@ export default function ChargesTab() {
                 {formatMoney(totalExpenses, currency)}
               </Text>
             </View>
+
+            {charges.length > 0 ? (
+              <TouchableOpacity
+                onPress={handleBulkAnalyze}
+                disabled={analyzing}
+                className="mt-3 flex-row items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-3"
+              >
+                {analyzing
+                  ? <ActivityIndicator size="small" color={palette.primary} />
+                  : <Wand2 size={16} color={palette.primary} />}
+                <Text className="text-sm text-primary font-display-semibold">
+                  AI · Analyser toutes les charges
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
             {totalSavings > 0 ? (
               <Card className="mt-3 bg-success/10" padding="sm">
                 <View className="flex-row items-center gap-2">
