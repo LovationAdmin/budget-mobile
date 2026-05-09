@@ -173,17 +173,22 @@ EAS upload l'AAB sur la Play Console et le pousse sur l'internal testing.
 - [x] Auth email + mot de passe avec refresh token mobile-friendly
 - [x] Magic link (request + verify deep link)
 - [x] Biométrie (FaceID / empreinte) avec opt-in
-- [x] Push tokens Expo registration
-- [x] WebSocket realtime
+- [x] Push tokens Expo registration + listener (foreground refresh + tap deep link)
+- [x] WebSocket realtime (auto-invalidate on remote change)
 - [x] Branding aligné web (DM Sans, Plus Jakarta, HSL tokens, light + dark)
 - [x] i18n FR + EN avec persistance
 - [x] Dashboard + 6 onglets budget
-- [x] Profile (biométrie + langue + 2FA stub + password change)
-- [ ] Écrans CRUD pour : ajouter / éditer charges, projets, entrées calendrier
-- [ ] Onboarding banque (WebView Enable Banking PSD2 ou redirect web)
-- [ ] Setup 2FA (TOTP) directement depuis le mobile
-- [ ] Suggestions IA inline (bouton "Analyser cette charge")
-- [ ] Mode offline (React Query persist + queue mutations)
+- [x] Profile complet (biométrie + langue + 2FA + password + privacy + terms)
+- [x] Onboarding 3-écrans avec gate first-launch
+- [x] CRUD complet : charges / projets / calendrier / revenus (BottomSheets RHF + Zod)
+- [x] Onboarding banque WebView Enable Banking PSD2
+- [x] 2FA TOTP setup screen avec QR + backup codes
+- [x] Suggestions IA inline (auto-categorize sur le label) + bulk analyze
+- [x] Mode offline : React Query AsyncStorage persister, 7j retention
+- [x] Sentry observability (no-op si DSN absent)
+- [x] Privacy Policy + Terms FR ready-for-Play-Store
+- [x] Accept invitation deep link
+- [x] Assets icon/splash/adaptive/notification générés depuis sources SVG
 
 ### QA
 - [ ] Test sur Android 8 (min SDK Expo SDK 51 = 23)
