@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { CreditCard, Sparkles, Plus, Wand2 } from 'lucide-react-native';
+import { CreditCard, Sparkles, Plus, Wand2, Lock } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 
-import { useBudget, useBudgetData } from '@/hooks/useBudget';
+import { useBudget, useBudgetData, usePrivateItems } from '@/hooks/useBudget';
 import { useBudgetMutations } from '@/hooks/useBudgetMutations';
-import { isWebBudget, webCharges, webMonthSummary } from '@/lib/budget/web';
+import { isWebBudget, webCharges, webMonthSummary, webPersonalCharges, type WebPersonalCharge } from '@/lib/budget/web';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
@@ -65,6 +65,29 @@ function ChargeRow({
   );
 }
 
+function PersonalChargeRow({ charge, currency }: { charge: WebPersonalCharge; currency: string }) {
+  const { t } = useTranslation();
+  const color = CATEGORY_COLORS[charge.category] ?? palette.light.mutedFg;
+  return (
+    <Card className="mb-2" padding="sm">
+      <View className="flex-row items-start">
+        <View className="mr-3 mt-0.5 h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+        <View className="flex-1">
+          <View className="flex-row items-center gap-1">
+            {charge.private ? <Lock size={12} color={palette.light.mutedFg} accessibilityLabel={t('budget.charges.private')} /> : null}
+            <Text className="flex-shrink text-foreground font-display-semibold">{charge.label}</Text>
+          </View>
+          <Text className="mt-0.5 text-xs text-muted-fg font-sans">
+            {charge.ownerName}
+            {charge.private ? ` · ${t('budget.charges.private')}` : ''}
+          </Text>
+        </View>
+        <Text className="ml-2 text-foreground font-display-bold">{formatMoney(charge.amount, currency)}</Text>
+      </View>
+    </Card>
+  );
+}
+
 export default function ChargesTab() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -74,6 +97,8 @@ export default function ChargesTab() {
   const [editing, setEditing] = useState<Charge | undefined>(undefined);
   const [showForm, setShowForm] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const webModel = isWebBudget(env.data?.data);
+  const privateItems = usePrivateItems(id!, webModel);
 
   if (env.isLoading) return <LoadingScreen />;
   if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
@@ -84,6 +109,8 @@ export default function ChargesTab() {
   // apply from the first open month (lib/budget/webEdit.ts).
   const web = isWebBudget(data) ? webMonthSummary(data) : null;
   const charges = web ? webCharges(web) : ((data.charges ?? []) as Charge[]);
+  const personal = web ? webPersonalCharges(web, privateItems.data) : [];
+  const totalPersonal = web ? web.month.totals.personal : 0;
   const totalExpenses = web ? web.month.totals.charges : data.total_expenses ?? charges.reduce((s, c) => s + (c.amount ?? 0), 0);
   const totalSavings  = charges.reduce((s, c) => s + (c.market_suggestion?.savings_potential ?? 0), 0);
 
@@ -153,6 +180,18 @@ export default function ChargesTab() {
               </Card>
             ) : null}
           </View>
+        }
+        ListFooterComponent={
+          personal.length > 0 ? (
+            <View className="mt-4">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-base text-foreground font-display-semibold">{t('budget.charges.personalTitle')}</Text>
+                <Text className="text-foreground font-display-bold">{formatMoney(totalPersonal, currency)}</Text>
+              </View>
+              <Text className="mb-3 mt-1 text-xs text-muted-fg font-sans">{t('budget.charges.personalHint')}</Text>
+              {personal.map((c) => <PersonalChargeRow key={c.id} charge={c} currency={currency} />)}
+            </View>
+          ) : null
         }
         ListEmptyComponent={
           <Card className="items-center py-10">

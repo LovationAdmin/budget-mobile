@@ -168,6 +168,25 @@ export default function OverviewTab() {
         )}
       </Card>
 
+      {web && web.month.people.length > 0 ? (
+        <Card>
+          <Text className="mb-3 text-sm text-foreground font-display-semibold">{t('budget.overview.pocketMoney')}</Text>
+          {web.month.people.map((p) => (
+            <View key={p.id} className="mb-2 flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-sm text-foreground font-sans">{p.name}</Text>
+                {p.personalCharges > 0 ? (
+                  <Text className="text-xs text-muted-fg font-sans">
+                    {t('budget.overview.pocketIncludes', { amount: formatMoney(p.personalCharges, currency) })}
+                  </Text>
+                ) : null}
+              </View>
+              <Text className="text-sm text-foreground font-display-semibold">{formatMoney(p.keep, currency)}</Text>
+            </View>
+          ))}
+        </Card>
+      ) : null}
+
       <IncomeFormSheet
         visible={showIncomeForm}
         onClose={() => setShowIncomeForm(false)}

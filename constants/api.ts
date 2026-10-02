@@ -43,6 +43,7 @@ export const ENDPOINTS = {
   BUDGET_DATA:    (id: string) => `/budgets/${id}/data`,
   BUDGET_INVITE:  (id: string) => `/budgets/${id}/invite`,
   BUDGET_INVITES: (id: string) => `/budgets/${id}/invitations`,
+  PRIVATE_ITEMS:  (id: string) => `/budgets/${id}/private-items`,
   CANCEL_INVITE:  (b: string, i: string) => `/budgets/${b}/invitations/${i}`,
   REMOVE_MEMBER:  (b: string, m: string) => `/budgets/${b}/members/${m}`,
   ACCEPT_INVITE:  '/invitations/accept',
@@ -67,6 +68,7 @@ export const QUERY_KEYS = {
   BUDGETS:      ['budgets'] as const,
   BUDGET:       (id: string) => ['budgets', id] as const,
   BUDGET_DATA:  (id: string) => ['budgets', id, 'data'] as const,
+  PRIVATE_ITEMS: (id: string) => ['budgets', id, 'private-items'] as const,
   PROFILE:      ['profile'] as const,
   REALITY:      (id: string) => ['budgets', id, 'reality'] as const,
 };
