@@ -93,7 +93,7 @@
       "leftover": "Left over",
       "contributions": "Household contributions",
       "oneOff": "One-off income",
-      "pocketMoney": "Pocket money",
+      "pocketMoney": "Spending money",
       "pocketIncludes": "incl. {{amount}} personal charges"
     },
     "webModel": {
@@ -128,7 +128,7 @@
       "oneTime": "One-time",
       "totalMonthly": "Monthly total",
       "personalTitle": "Personal charges",
-      "personalHint": "Taken from each member's pocket money, never from the shared pot. Editable on the web.",
+      "personalHint": "Taken from each member's spending money, never from the shared pot. Editable on the web.",
       "private": "Private"
     },
     "projects": {
