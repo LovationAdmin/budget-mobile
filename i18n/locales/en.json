@@ -71,9 +71,15 @@
       "inflows": "Inflows", "charges": "Charges", "savingsMonth": "Savings this month",
       "leftover": "Left over", "contributions": "Household contributions", "oneOff": "One-off income"
     },
-    "readOnly": {
-      "body": "This budget uses closed months and contributions: view only on mobile, same figures as the web app.",
-      "openWeb": "Edit on the web"
+    "webModel": {
+      "body": "Changes apply from the current month on; closed months stay as they were. Members and contributions are managed on the web.",
+      "openWeb": "Open on the web"
+    },
+    "webEdit": {
+      "closed_month": "This month is closed: reopen it on the web to change it.",
+      "not_found": "This item no longer exists. Pull to refresh.",
+      "members_on_web": "Member contributions are edited on the web.",
+      "network": "Could not save. Check your connection."
     },
     "members": {
       "title": "Members", "invite": "Invite by email",

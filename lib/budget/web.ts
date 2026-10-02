@@ -6,9 +6,9 @@
 // the mobile app shows exactly the web numbers. Keep them in sync with the
 // web (copy, do not edit here).
 //
-// Until the mobile editors speak this model, such budgets are READ-ONLY on
-// mobile: writing the mobile-only fields (income_sources, project.name…)
-// would hide or corrupt data on the web.
+// Mobile edits on such budgets go through the web mutations (webEdit.ts) and
+// are re-encoded by the web codec; mobile-only fields (income_sources,
+// project.name…) are never written into them.
 // ============================================================================
 
 import { decodeBudget } from './codec';
@@ -18,6 +18,7 @@ import type { YM } from './types';
 import { GENERAL_SAVINGS_ID } from './types';
 import type { CalendarEntry, Charge as MobileCharge, Project as MobileProject } from '@/types';
 
+/** Rejection reason when a mobile-model write targets a web-model budget. */
 export const READ_ONLY_WEB_BUDGET = 'READ_ONLY_WEB_BUDGET';
 
 type Blob = Record<string, unknown> | null | undefined;

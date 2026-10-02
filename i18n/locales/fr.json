@@ -143,9 +143,15 @@
       "planned": "Prévu",
       "actual": "Réel"
     },
-    "readOnly": {
-      "body": "Ce budget utilise les mois clôturés et les contributions : consultation seule sur mobile, chiffres identiques au web.",
-      "openWeb": "Modifier sur le web"
+    "webModel": {
+      "body": "Les changements s’appliquent à partir du mois en cours ; les mois clôturés ne bougent pas. Membres et contributions se gèrent sur le web.",
+      "openWeb": "Ouvrir sur le web"
+    },
+    "webEdit": {
+      "closed_month": "Ce mois est clôturé : rouvrez-le sur le web pour le modifier.",
+      "not_found": "Cet élément n’existe plus. Tirez pour actualiser.",
+      "members_on_web": "Les contributions des membres se modifient sur le web.",
+      "network": "Enregistrement impossible. Vérifiez votre connexion."
     }
   },
   "categories": {

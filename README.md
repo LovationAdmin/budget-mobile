@@ -230,4 +230,9 @@ EAS upload l'AAB sur la Play Console et le pousse sur l'internal testing.
 
 Les budgets créés ou ouverts sur le web suivent le modèle « Mois » : contributions par membre, montants datés, mois clôturés. Le moteur de calcul est copié tel quel depuis `budget-ui/src/lib/budget`, dans `lib/budget/`. Il faut garder ces fichiers synchronisés avec le web : on les recopie, on ne les modifie pas ici. Le mobile affiche ainsi exactement les mêmes chiffres que le web.
 
-Tant que les formulaires mobiles ne parlent pas ce modèle, ces budgets sont **en lecture seule** sur mobile. Un bandeau propose de « Modifier sur le web », et `BudgetService.updateData` refuse toute écriture pour éviter de corrompre les données web.
+Les modifications faites sur mobile passent par les mutations du web (`lib/budget/mutations.ts`, recopié lui aussi), puis par `lib/budget/webEdit.ts`, et sont réencodées par le codec web :
+- **Charges et épargnes** : la modification s'applique à partir du premier mois ouvert. Une suppression retire la règle, comme « Supprimer » sur le web ; les mois clôturés gardent leur photo.
+- **Calendrier** : chaque ligne ne concerne que son mois (revenu ponctuel, charge ponctuelle, montant ou saut d'une charge récurrente pour ce seul mois). Un mois clôturé est refusé : il faut le rouvrir sur le web.
+- **Membres et contributions** : ils se gèrent sur le web. Un bandeau le rappelle et propose « Ouvrir sur le web ».
+
+Les champs propres au mobile (`income_sources`, `projects.name`…) ne sont jamais écrits dans ces budgets.

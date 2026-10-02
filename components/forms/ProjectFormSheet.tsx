@@ -10,13 +10,14 @@ import { Button } from '@/components/ui/Button';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import type { Project } from '@/types';
 
-const schema = z.object({
+// Web-model savings may have no goal (0 = none).
+const schemaFor = (webModel: boolean) => z.object({
   name:           z.string().min(1),
-  target_amount:  z.coerce.number().positive(),
+  target_amount:  webModel ? z.coerce.number().min(0) : z.coerce.number().positive(),
   current_amount: z.coerce.number().min(0),
   deadline:       z.string().optional(),
 });
-type FormData = z.infer<typeof schema>;
+type FormData = z.infer<ReturnType<typeof schemaFor>>;
 
 interface Props {
   visible: boolean;
@@ -24,12 +25,14 @@ interface Props {
   onSubmit: (project: Omit<Project, 'id'>) => Promise<void>;
   onDelete?: () => Promise<void>;
   initial?: Project;
+  /** Web-model budget: the balance comes from the months, so only name + goal are edited. */
+  webModel?: boolean;
 }
 
-export function ProjectFormSheet({ visible, onClose, onSubmit, onDelete, initial }: Props) {
+export function ProjectFormSheet({ visible, onClose, onSubmit, onDelete, initial, webModel = false }: Props) {
   const { t } = useTranslation();
   const { control, handleSubmit, reset, formState: { errors, isSubmitting } } =
-    useForm<FormData>({ resolver: zodResolver(schema) });
+    useForm<FormData>({ resolver: zodResolver(schemaFor(webModel)) });
 
   useEffect(() => {
     reset({
@@ -73,6 +76,7 @@ export function ProjectFormSheet({ visible, onClose, onSubmit, onDelete, initial
             error={errors.target_amount?.message} />
         )} />
 
+      {webModel ? null : (<>
       <Controller control={control} name="current_amount"
         render={({ field: { onChange, value, onBlur } }) => (
           <Input label={t('budget.projects.saved')} placeholder="0"
@@ -89,6 +93,7 @@ export function ProjectFormSheet({ visible, onClose, onSubmit, onDelete, initial
             value={value ?? ''} onChangeText={onChange} onBlur={onBlur}
             error={errors.deadline?.message} />
         )} />
+      </>)}
 
       <Button onPress={handleSubmit(handle)} loading={isSubmitting} size="lg">
         {t('common.save')}

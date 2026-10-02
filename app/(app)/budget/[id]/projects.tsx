@@ -73,7 +73,8 @@ export default function ProjectsTab() {
   if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
 
   const data = env.data.data ?? {};
-  // Web-model budgets: savings pots with their balance today, read-only.
+  // Web-model budgets: savings pots with their balance today (the balance
+  // comes from the months, so only the name and the goal are edited here).
   const web = isWebBudget(data);
   const projects = web ? webProjects(data) : ((data.projects ?? []) as Project[]);
   const currency = budget.data?.currency ?? 'EUR';
@@ -90,7 +91,7 @@ export default function ProjectsTab() {
           <ProjectCard
             project={item}
             currency={currency}
-            onPress={web ? undefined : () => { setEditing(item); setShowForm(true); }}
+            onPress={() => { setEditing(item); setShowForm(true); }}
           />
         )}
         refreshControl={
@@ -122,7 +123,6 @@ export default function ProjectsTab() {
         }
       />
 
-      {web ? null : (
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityLabel={t('budget.projects.add')}
@@ -132,9 +132,9 @@ export default function ProjectsTab() {
       >
         <Plus size={24} color="#FFF" />
       </TouchableOpacity>
-      )}
 
       <ProjectFormSheet
+        webModel={web}
         visible={showForm}
         onClose={() => setShowForm(false)}
         initial={editing}
