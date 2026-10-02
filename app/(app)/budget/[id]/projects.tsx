@@ -6,6 +6,7 @@ import { Target, Plus } from 'lucide-react-native';
 
 import { useBudget, useBudgetData } from '@/hooks/useBudget';
 import { useBudgetMutations } from '@/hooks/useBudgetMutations';
+import { isWebBudget, webProjects } from '@/lib/budget/web';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
@@ -20,7 +21,7 @@ function formatMoney(n: number, currency = 'EUR') {
 
 function ProjectCard({
   project, currency, onPress,
-}: { project: Project; currency: string; onPress: () => void }) {
+}: { project: Project; currency: string; onPress?: () => void }) {
   const { t } = useTranslation();
   const target = project.target_amount || 1;
   const progress = Math.min((project.current_amount ?? 0) / target, 1);
@@ -28,7 +29,7 @@ function ProjectCard({
   const color = project.color ?? palette.warm;
 
   return (
-    <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress} disabled={!onPress}>
       <Card className="mb-3">
         <View className="flex-row items-start justify-between">
           <View className="flex-1">
@@ -71,7 +72,10 @@ export default function ProjectsTab() {
   if (env.isLoading) return <LoadingScreen />;
   if (env.isError || !env.data) return <ErrorScreen onRetry={env.refetch} />;
 
-  const projects = (env.data.data?.projects ?? []) as Project[];
+  const data = env.data.data ?? {};
+  // Web-model budgets: savings pots with their balance today, read-only.
+  const web = isWebBudget(data);
+  const projects = web ? webProjects(data) : ((data.projects ?? []) as Project[]);
   const currency = budget.data?.currency ?? 'EUR';
   const totalSaved  = projects.reduce((a, p) => a + (p.current_amount ?? 0), 0);
   const totalTarget = projects.reduce((a, p) => a + (p.target_amount   ?? 0), 0);
@@ -86,7 +90,7 @@ export default function ProjectsTab() {
           <ProjectCard
             project={item}
             currency={currency}
-            onPress={() => { setEditing(item); setShowForm(true); }}
+            onPress={web ? undefined : () => { setEditing(item); setShowForm(true); }}
           />
         )}
         refreshControl={
@@ -118,13 +122,17 @@ export default function ProjectsTab() {
         }
       />
 
+      {web ? null : (
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={t('budget.projects.add')}
         onPress={() => { setEditing(undefined); setShowForm(true); }}
         className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-warm-500"
         style={{ shadowColor: '#F97316', shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }}
       >
         <Plus size={24} color="#FFF" />
       </TouchableOpacity>
+      )}
 
       <ProjectFormSheet
         visible={showForm}

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BudgetService } from '@/services/budget.service';
 import { QUERY_KEYS } from '@/constants/api';
+import { isWebBudget, READ_ONLY_WEB_BUDGET } from '@/lib/budget/web';
 import type {
   BudgetDataEnvelope, BudgetDataPayload,
   Charge, Project, CalendarEntry, IncomeSource,
@@ -49,6 +50,12 @@ export function useBudgetMutations(budgetId: string) {
     onSettled: () => qc.invalidateQueries({ queryKey: QUERY_KEYS.BUDGET_DATA(budgetId) }),
   });
 
+  // Never write mobile-model fields into a web-model budget (read-only here).
+  function commit(payload: BudgetDataPayload) {
+    if (isWebBudget(payload)) return Promise.reject(new Error(READ_ONLY_WEB_BUDGET));
+    return commit(payload);
+  }
+
   function currentPayload(): BudgetDataPayload {
     const env = qc.getQueryData<BudgetDataEnvelope>(QUERY_KEYS.BUDGET_DATA(budgetId));
     return env?.data ?? {};
@@ -58,7 +65,7 @@ export function useBudgetMutations(budgetId: string) {
   const addCharge = (c: Omit<Charge, 'id'>) => {
     const data = currentPayload();
     const charges = [...((data.charges ?? []) as Charge[]), { ...c, id: newId() }];
-    return mutate.mutateAsync(applyTotals({ ...data, charges }));
+    return commit(applyTotals({ ...data, charges }));
   };
 
   const updateCharge = (id: string, patch: Partial<Charge>) => {
@@ -66,20 +73,20 @@ export function useBudgetMutations(budgetId: string) {
     const charges = ((data.charges ?? []) as Charge[]).map((c) =>
       c.id === id ? { ...c, ...patch } : c,
     );
-    return mutate.mutateAsync(applyTotals({ ...data, charges }));
+    return commit(applyTotals({ ...data, charges }));
   };
 
   const removeCharge = (id: string) => {
     const data = currentPayload();
     const charges = ((data.charges ?? []) as Charge[]).filter((c) => c.id !== id);
-    return mutate.mutateAsync(applyTotals({ ...data, charges }));
+    return commit(applyTotals({ ...data, charges }));
   };
 
   // ── Projects ─────────────────────────────────────────────────────────────
   const addProject = (p: Omit<Project, 'id'>) => {
     const data = currentPayload();
     const projects = [...((data.projects ?? []) as Project[]), { ...p, id: newId() }];
-    return mutate.mutateAsync({ ...data, projects });
+    return commit({ ...data, projects });
   };
 
   const updateProject = (id: string, patch: Partial<Project>) => {
@@ -87,13 +94,13 @@ export function useBudgetMutations(budgetId: string) {
     const projects = ((data.projects ?? []) as Project[]).map((p) =>
       p.id === id ? { ...p, ...patch } : p,
     );
-    return mutate.mutateAsync({ ...data, projects });
+    return commit({ ...data, projects });
   };
 
   const removeProject = (id: string) => {
     const data = currentPayload();
     const projects = ((data.projects ?? []) as Project[]).filter((p) => p.id !== id);
-    return mutate.mutateAsync({ ...data, projects });
+    return commit({ ...data, projects });
   };
 
   // ── Calendar entries ─────────────────────────────────────────────────────
@@ -103,7 +110,7 @@ export function useBudgetMutations(budgetId: string) {
       ...((data.calendar_entries ?? []) as CalendarEntry[]),
       { ...e, id: newId() },
     ];
-    return mutate.mutateAsync({ ...data, calendar_entries });
+    return commit({ ...data, calendar_entries });
   };
 
   const updateCalendarEntry = (id: string, patch: Partial<CalendarEntry>) => {
@@ -111,7 +118,7 @@ export function useBudgetMutations(budgetId: string) {
     const calendar_entries = ((data.calendar_entries ?? []) as CalendarEntry[]).map((e) =>
       e.id === id ? { ...e, ...patch } : e,
     );
-    return mutate.mutateAsync({ ...data, calendar_entries });
+    return commit({ ...data, calendar_entries });
   };
 
   const removeCalendarEntry = (id: string) => {
@@ -119,7 +126,7 @@ export function useBudgetMutations(budgetId: string) {
     const calendar_entries = ((data.calendar_entries ?? []) as CalendarEntry[]).filter(
       (e) => e.id !== id,
     );
-    return mutate.mutateAsync({ ...data, calendar_entries });
+    return commit({ ...data, calendar_entries });
   };
 
   // ── Income sources ───────────────────────────────────────────────────────
@@ -129,7 +136,7 @@ export function useBudgetMutations(budgetId: string) {
       ...((data.income_sources ?? []) as IncomeSource[]),
       { ...i, id: newId() },
     ];
-    return mutate.mutateAsync(applyTotals({ ...data, income_sources }));
+    return commit(applyTotals({ ...data, income_sources }));
   };
 
   const updateIncome = (id: string, patch: Partial<IncomeSource>) => {
@@ -137,7 +144,7 @@ export function useBudgetMutations(budgetId: string) {
     const income_sources = ((data.income_sources ?? []) as IncomeSource[]).map((i) =>
       i.id === id ? { ...i, ...patch } : i,
     );
-    return mutate.mutateAsync(applyTotals({ ...data, income_sources }));
+    return commit(applyTotals({ ...data, income_sources }));
   };
 
   const removeIncome = (id: string) => {
@@ -145,7 +152,7 @@ export function useBudgetMutations(budgetId: string) {
     const income_sources = ((data.income_sources ?? []) as IncomeSource[]).filter(
       (i) => i.id !== id,
     );
-    return mutate.mutateAsync(applyTotals({ ...data, income_sources }));
+    return commit(applyTotals({ ...data, income_sources }));
   };
 
   return {

@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, CalendarDays, Plus } from 'lucide-react-nati
 
 import { useBudget, useBudgetData } from '@/hooks/useBudget';
 import { useBudgetMutations } from '@/hooks/useBudgetMutations';
+import { isWebBudget, webMonthEntries, webMonthSummary } from '@/lib/budget/web';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
@@ -23,13 +24,13 @@ function formatMoney(n: number, currency = 'EUR') {
 function EntryRow({
   entry, currency, onPress,
 }: {
-  entry: CalendarEntry; currency: string; onPress: () => void;
+  entry: CalendarEntry; currency: string; onPress?: () => void;
 }) {
   const { i18n } = useTranslation();
   const locale = i18n.language === 'fr' ? fr : enUS;
   const isIncome = entry.type === 'income';
   return (
-    <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress} disabled={!onPress}>
       <Card className="mb-1.5" padding="sm">
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
@@ -67,12 +68,19 @@ export default function CalendarTab() {
   const currency = budget.data?.currency ?? 'EUR';
   const locale = i18n.language === 'fr' ? fr : enUS;
 
-  const sorted = allEntries
-    .filter((e) => isSameMonth(parseISO(e.date), currentMonth))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Web-model budgets: the month as the web computes it (contributions,
+  // one-off income and charges), read-only.
+  const data = env.data.data ?? {};
+  const web = isWebBudget(data) ? webMonthSummary(data, format(currentMonth, 'yyyy-MM')) : null;
 
-  const monthIncome   = sorted.filter((e) => e.type === 'income').reduce((a, e) => a + e.amount, 0);
-  const monthExpenses = sorted.filter((e) => e.type === 'expense').reduce((a, e) => a + e.amount, 0);
+  const sorted = web
+    ? webMonthEntries(web)
+    : allEntries
+        .filter((e) => isSameMonth(parseISO(e.date), currentMonth))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const monthIncome   = web ? web.month.totals.entrees : sorted.filter((e) => e.type === 'income').reduce((a, e) => a + e.amount, 0);
+  const monthExpenses = web ? web.month.totals.charges : sorted.filter((e) => e.type === 'expense').reduce((a, e) => a + e.amount, 0);
 
   return (
     <View className="flex-1 bg-background">
@@ -84,7 +92,7 @@ export default function CalendarTab() {
           <EntryRow
             entry={item}
             currency={currency}
-            onPress={() => { setEditing(item); setShowForm(true); }}
+            onPress={web ? undefined : () => { setEditing(item); setShowForm(true); }}
           />
         )}
         refreshControl={
@@ -128,13 +136,17 @@ export default function CalendarTab() {
         }
       />
 
+      {web ? null : (
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={t('budget.calendar.addEntry')}
         onPress={() => { setEditing(undefined); setShowForm(true); }}
         className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-warm-500"
         style={{ shadowColor: '#F97316', shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }}
       >
         <Plus size={24} color="#FFF" />
       </TouchableOpacity>
+      )}
 
       <CalendarEntryFormSheet
         visible={showForm}

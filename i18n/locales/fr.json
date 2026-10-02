@@ -86,7 +86,13 @@
       "balance": "Solde",
       "savings": "Épargne",
       "monthlyBreakdown": "Répartition mensuelle",
-      "addIncome": "Ajouter un revenu"
+      "addIncome": "Ajouter un revenu",
+      "inflows": "Entrées",
+      "charges": "Charges",
+      "savingsMonth": "Épargne du mois",
+      "leftover": "Reste",
+      "contributions": "Contributions du foyer",
+      "oneOff": "Revenus ponctuels"
     },
     "members": {
       "title": "Membres",
@@ -136,6 +142,10 @@
       "totalReal": "Total réel",
       "planned": "Prévu",
       "actual": "Réel"
+    },
+    "readOnly": {
+      "body": "Ce budget utilise les mois clôturés et les contributions : consultation seule sur mobile, chiffres identiques au web.",
+      "openWeb": "Modifier sur le web"
     }
   },
   "categories": {

@@ -225,3 +225,9 @@ EAS upload l'AAB sur la Play Console et le pousse sur l'internal testing.
 - [Expo Push Notifications](https://docs.expo.dev/push-notifications/overview/)
 - [Google Play Console](https://play.google.com/console)
 - [Privacy Policy generator](https://app-privacy-policy-generator.firebaseapp.com/)
+
+## Budgets au modèle web (schemaVersion 3)
+
+Les budgets créés ou ouverts sur le web suivent le modèle « Mois » : contributions par membre, montants datés, mois clôturés. Le moteur de calcul est copié tel quel depuis `budget-ui/src/lib/budget`, dans `lib/budget/`. Il faut garder ces fichiers synchronisés avec le web : on les recopie, on ne les modifie pas ici. Le mobile affiche ainsi exactement les mêmes chiffres que le web.
+
+Tant que les formulaires mobiles ne parlent pas ce modèle, ces budgets sont **en lecture seule** sur mobile. Un bandeau propose de « Modifier sur le web », et `BudgetService.updateData` refuse toute écriture pour éviter de corrompre les données web.
