@@ -4,11 +4,23 @@
     "tagline": "Family budgeting, simple and shared"
   },
   "common": {
-    "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit",
-    "confirm": "Confirm", "back": "Back", "next": "Next",
-    "loading": "Loading…", "retry": "Retry", "search": "Search",
-    "empty": "No items", "error": "Something went wrong",
-    "yes": "Yes", "no": "No", "add": "Add", "show": "Show", "hide": "Hide"
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "search": "Search",
+    "empty": "No items",
+    "error": "Something went wrong",
+    "yes": "Yes",
+    "no": "No",
+    "add": "Add",
+    "show": "Show",
+    "hide": "Hide"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -61,15 +73,28 @@
   },
   "budget": {
     "tabs": {
-      "overview": "Overview", "members": "Members", "charges": "Charges",
-      "projects": "Projects", "calendar": "Calendar", "reality": "Reality"
+      "overview": "Overview",
+      "members": "Members",
+      "charges": "Charges",
+      "projects": "Projects",
+      "calendar": "Calendar",
+      "reality": "Reality"
     },
     "overview": {
-      "income": "Income", "expenses": "Expenses", "balance": "Balance",
-      "savings": "Savings", "monthlyBreakdown": "Monthly breakdown",
+      "income": "Income",
+      "expenses": "Expenses",
+      "balance": "Balance",
+      "savings": "Savings",
+      "monthlyBreakdown": "Monthly breakdown",
       "addIncome": "Add income",
-      "inflows": "Inflows", "charges": "Charges", "savingsMonth": "Savings this month",
-      "leftover": "Left over", "contributions": "Household contributions", "oneOff": "One-off income"
+      "inflows": "Inflows",
+      "charges": "Charges",
+      "savingsMonth": "Savings this month",
+      "leftover": "Left over",
+      "contributions": "Household contributions",
+      "oneOff": "One-off income",
+      "pocketMoney": "Pocket money",
+      "pocketIncludes": "incl. {{amount}} personal charges"
     },
     "webModel": {
       "body": "Changes apply from the current month on; closed months stay as they were. Members and contributions are managed on the web.",
@@ -82,46 +107,80 @@
       "network": "Could not save. Check your connection."
     },
     "members": {
-      "title": "Members", "invite": "Invite by email",
-      "inviteSent": "Invitation sent", "remove": "Remove from budget",
-      "removeConfirm": "Remove this member?", "owner": "Owner", "pending": "Pending"
+      "title": "Members",
+      "invite": "Invite by email",
+      "inviteSent": "Invitation sent",
+      "remove": "Remove from budget",
+      "removeConfirm": "Remove this member?",
+      "owner": "Owner",
+      "pending": "Pending"
     },
     "charges": {
-      "title": "Recurring charges", "addCharge": "Add a charge",
+      "title": "Recurring charges",
+      "addCharge": "Add a charge",
       "editCharge": "Edit charge",
-      "label": "Label", "amount": "Amount", "category": "Category",
-      "recurrence": "Recurrence", "monthly": "Monthly",
-      "yearly": "Yearly", "oneTime": "One-time",
-      "totalMonthly": "Monthly total"
+      "label": "Label",
+      "amount": "Amount",
+      "category": "Category",
+      "recurrence": "Recurrence",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "oneTime": "One-time",
+      "totalMonthly": "Monthly total",
+      "personalTitle": "Personal charges",
+      "personalHint": "Taken from each member's pocket money, never from the shared pot. Editable on the web.",
+      "private": "Private"
     },
     "projects": {
-      "title": "Savings projects", "add": "New project",
-      "edit": "Edit project", "name": "Project name",
-      "target": "Target", "saved": "Saved", "deadline": "Deadline"
+      "title": "Savings projects",
+      "add": "New project",
+      "edit": "Edit project",
+      "name": "Project name",
+      "target": "Target",
+      "saved": "Saved",
+      "deadline": "Deadline"
     },
     "calendar": {
-      "title": "Calendar", "month": "Month",
-      "addEntry": "Add entry", "editEntry": "Edit entry",
-      "type": "Type", "date": "Date"
+      "title": "Calendar",
+      "month": "Month",
+      "addEntry": "Add entry",
+      "editEntry": "Edit entry",
+      "type": "Type",
+      "date": "Date"
     },
     "reality": {
-      "title": "Bank reality", "connectBank": "Connect my bank",
-      "noConnection": "No bank connected", "syncing": "Syncing…",
-      "savingsPool": "Savings account", "totalReal": "Real total",
-      "planned": "Planned", "actual": "Actual"
+      "title": "Bank reality",
+      "connectBank": "Connect my bank",
+      "noConnection": "No bank connected",
+      "syncing": "Syncing…",
+      "savingsPool": "Savings account",
+      "totalReal": "Real total",
+      "planned": "Planned",
+      "actual": "Actual"
     }
   },
   "categories": {
-    "housing": "Housing", "transport": "Transport", "food": "Food",
-    "health": "Health", "education": "Education", "leisure": "Leisure",
-    "savings": "Savings", "other": "Other"
+    "housing": "Housing",
+    "transport": "Transport",
+    "food": "Food",
+    "health": "Health",
+    "education": "Education",
+    "leisure": "Leisure",
+    "savings": "Savings",
+    "other": "Other"
   },
   "profile": {
-    "title": "Profile", "language": "Language",
-    "biometric": "Biometric unlock", "twoFactor": "Two-factor authentication",
-    "logout": "Sign out", "logoutAll": "Sign out everywhere",
-    "deleteAccount": "Delete my account", "exportData": "Export my data",
-    "security": "Security", "preferences": "Preferences", "legal": "Legal"
+    "title": "Profile",
+    "language": "Language",
+    "biometric": "Biometric unlock",
+    "twoFactor": "Two-factor authentication",
+    "logout": "Sign out",
+    "logoutAll": "Sign out everywhere",
+    "deleteAccount": "Delete my account",
+    "exportData": "Export my data",
+    "security": "Security",
+    "preferences": "Preferences",
+    "legal": "Legal"
   },
   "errors": {
     "network": "Cannot reach the server. Check your connection.",

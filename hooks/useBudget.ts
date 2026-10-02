@@ -20,6 +20,17 @@ export function useBudgetData(id: string) {
   });
 }
 
+/** Private details only the current user can read (never shared with the household). */
+export function usePrivateItems(id: string, enabled = true) {
+  return useQuery({
+    queryKey: QUERY_KEYS.PRIVATE_ITEMS(id),
+    queryFn: () => BudgetService.privateItems(id),
+    enabled: !!id && enabled,
+    // Missing details just fall back to the shared « Charge privée » label.
+    retry: false,
+  });
+}
+
 export function useUpdateBudgetData(id: string) {
   const qc = useQueryClient();
   return useMutation({

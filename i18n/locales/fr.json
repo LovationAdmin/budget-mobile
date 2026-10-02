@@ -92,7 +92,9 @@
       "savingsMonth": "Épargne du mois",
       "leftover": "Reste",
       "contributions": "Contributions du foyer",
-      "oneOff": "Revenus ponctuels"
+      "oneOff": "Revenus ponctuels",
+      "pocketMoney": "Argent de poche",
+      "pocketIncludes": "dont {{amount}} de charges perso"
     },
     "members": {
       "title": "Membres",
@@ -114,7 +116,10 @@
       "monthly": "Mensuel",
       "yearly": "Annuel",
       "oneTime": "Unique",
-      "totalMonthly": "Total mensuel"
+      "totalMonthly": "Total mensuel",
+      "personalTitle": "Charges perso",
+      "personalHint": "Déduites de l'argent de poche de chacun, jamais du pot commun. Modifiables sur le web.",
+      "private": "Privée"
     },
     "projects": {
       "title": "Projets d'épargne",

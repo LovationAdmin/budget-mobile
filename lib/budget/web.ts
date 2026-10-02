@@ -74,6 +74,36 @@ export function webCharges(summary: WebMonthSummary): MobileCharge[] {
     .map((c) => ({ id: c.id, label: c.label, amount: c.amount, category: c.category || 'other', recurrence: RECURRENCE[c.frequency] }));
 }
 
+export interface WebPersonalCharge {
+  id: string;
+  label: string;
+  amount: number;
+  category: string;
+  ownerName: string;
+  private: boolean;
+}
+
+/**
+ * Members' personal charges this month (out of their pocket money, never in
+ * the pot). A private charge shows its real name only to its creator: the
+ * server returns `privateItems` for the caller alone.
+ */
+export function webPersonalCharges(summary: WebMonthSummary, privateItems: Record<string, unknown> = {}): WebPersonalCharge[] {
+  const names = new Map(summary.month.people.map((p) => [p.id, p.name]));
+  return summary.month.personal.map((c) => {
+    const own = privateItems[`charge:${c.id}`];
+    const details = own && typeof own === 'object' ? (own as { label?: unknown; category?: unknown }) : null;
+    return {
+      id: c.id,
+      label: details && typeof details.label === 'string' && details.label ? details.label : c.label,
+      amount: c.amount,
+      category: (details && typeof details.category === 'string' && details.category) || c.category || 'other',
+      ownerName: names.get(c.ownerId) ?? '',
+      private: c.private,
+    };
+  });
+}
+
 /** Savings pots with their balance at the end of the current month. */
 export function webProjects(data: Blob): MobileProject[] {
   const today = currentYM();

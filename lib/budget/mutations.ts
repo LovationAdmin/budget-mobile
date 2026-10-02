@@ -313,6 +313,20 @@ export function setPersonMoney(
   };
 }
 
+/** Removes a member's month-only salary / contribution: the month follows the rules again. */
+export function clearPersonMonthException(model: BudgetModel, id: string, ym: YM): BudgetModel {
+  return {
+    ...model,
+    people: mapById(model.people, id, (p) => {
+      const salaryOverrides = { ...(p.salaryOverrides ?? {}) };
+      delete salaryOverrides[ym];
+      const contributionOverrides = { ...(p.contributionOverrides ?? {}) };
+      delete contributionOverrides[ym];
+      return withMap(withMap(p, 'salaryOverrides', salaryOverrides), 'contributionOverrides', contributionOverrides);
+    }),
+  };
+}
+
 /** Applies the same kind of rule to several members from `ym` onward. */
 export function applyContributionRules(model: BudgetModel, ym: YM, rules: Record<string, ContributionRule>, today: YM): BudgetModel {
   let next = model;

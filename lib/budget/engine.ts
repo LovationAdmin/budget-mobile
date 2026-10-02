@@ -61,6 +61,21 @@ export interface ResolvedPerson {
   salaryAdjusted: boolean;
   contributionAdjusted: boolean;
   deleted?: boolean;
+  /** Personal charges this month (part of `keep`, not of the pot). */
+  personalCharges: number;
+  /** Pocket money left once personal charges are paid (`keep` − `personalCharges`). */
+  available: number;
+}
+
+export interface ResolvedPersonalCharge {
+  id: string;
+  ownerId: string;
+  label: string;
+  category?: string;
+  amount: number;
+  private: boolean;
+  createdBy?: string;
+  frequency: Frequency;
 }
 
 export interface ResolvedCharge {
@@ -104,6 +119,8 @@ export interface MonthTotals {
   charges: number;
   savings: number;
   reste: number;
+  /** Members' personal charges this month (never part of `reste`). */
+  personal: number;
 }
 
 export interface ResolvedMonth {
@@ -116,6 +133,8 @@ export interface ResolvedMonth {
   oneOffs: OneOffItem[];
   charges: ResolvedCharge[];
   savings: ResolvedSaving[];
+  /** Members' personal charges (out of their pocket money). */
+  personal: ResolvedPersonalCharge[];
   generalSpent: number;
   generalComment: string;
   comment: string;
@@ -259,7 +278,25 @@ export function resolvePerson(p: Person, ym: YM): ResolvedPerson | null {
     value: rule?.value,
     salaryAdjusted,
     contributionAdjusted,
+    personalCharges: 0,
+    available: roundCents(salary - contribution),
   };
+}
+
+/** A member's personal charge (out of their pocket money, never in the pot). */
+export const isPersonalCharge = (c: Charge): boolean => !!c.ownerId;
+
+/** Charges paid by the household pot. */
+export function householdCharges(model: BudgetModel): Charge[] {
+  return model.charges.filter((c) => !c.ownerId);
+}
+
+/** Attaches personal charges to their owners (pocket money left = keep − personal). */
+function withPersonal(people: ResolvedPerson[], personal: ResolvedPersonalCharge[]): ResolvedPerson[] {
+  return people.map((p) => {
+    const own = roundCents(personal.filter((c) => c.ownerId === p.id).reduce((a, c) => a + c.amount, 0));
+    return { ...p, personalCharges: own, available: roundCents(p.keep - own) };
+  });
 }
 
 export function projectPlanned(p: Project, ym: YM): number {
@@ -319,7 +356,7 @@ export function resolveSaving(
   };
 }
 
-function totalsOf(people: ResolvedPerson[], oneOffs: OneOffItem[], charges: ResolvedCharge[], savings: ResolvedSaving[]): MonthTotals {
+function totalsOf(people: ResolvedPerson[], oneOffs: OneOffItem[], charges: ResolvedCharge[], savings: ResolvedSaving[], personal: ResolvedPersonalCharge[] = []): MonthTotals {
   const salaries = roundCents(people.reduce((s, p) => s + p.salary, 0));
   const contributions = roundCents(people.reduce((s, p) => s + p.contribution, 0));
   const oneOff = roundCents(oneOffs.reduce((s, o) => s + (Number(o.amount) || 0), 0));
@@ -334,6 +371,7 @@ function totalsOf(people: ResolvedPerson[], oneOffs: OneOffItem[], charges: Reso
     charges: chargesTotal,
     savings: savingsTotal,
     reste: roundCents(entrees - chargesTotal - savingsTotal),
+    personal: roundCents(personal.reduce((s, c) => s + c.amount, 0)),
   };
 }
 
@@ -344,16 +382,21 @@ export function emptyMonthRecord(): MonthRecord {
 /** Values of a month computed from the rules (ignores any snapshot). */
 export function resolveLiveMonth(model: BudgetModel, ym: YM, closed = false, storedRecurring = false): ResolvedMonth {
   const record = model.months[ym];
-  const people: ResolvedPerson[] = [];
+  const resolvedPeople: ResolvedPerson[] = [];
   for (const p of model.people) {
     const r = resolvePerson(p, ym);
-    if (r) people.push(r);
+    if (r) resolvedPeople.push(r);
   }
   const charges: ResolvedCharge[] = [];
+  const personal: ResolvedPersonalCharge[] = [];
   for (const c of model.charges) {
     const r = resolveCharge(c, ym);
-    if (r) charges.push(r);
+    if (!r) continue;
+    if (c.ownerId) {
+      if (r.amount !== 0) personal.push({ id: c.id, ownerId: c.ownerId, label: c.label, category: c.category, amount: r.amount, private: !!c.private, createdBy: c.createdBy, frequency: r.frequency });
+    } else charges.push(r);
   }
+  const people = withPersonal(resolvedPeople, personal);
   const savings: ResolvedSaving[] = [];
   for (const p of model.projects) {
     if (p.id === GENERAL_SAVINGS_ID) continue;
@@ -369,10 +412,11 @@ export function resolveLiveMonth(model: BudgetModel, ym: YM, closed = false, sto
     oneOffs,
     charges,
     savings,
+    personal,
     generalSpent: roundCents(record?.expenses?.[GENERAL_SAVINGS_ID] ?? 0),
     generalComment: record?.expenseComments?.[GENERAL_SAVINGS_ID] ?? '',
     comment: record?.comment ?? '',
-    totals: totalsOf(people, oneOffs, charges, savings),
+    totals: totalsOf(people, oneOffs, charges, savings, personal),
   };
 }
 
@@ -397,6 +441,19 @@ export function buildSnapshot(model: BudgetModel, ym: YM, closedAt: string, stor
     })),
     projects: live.savings.map((s) => ({ id: s.id, label: s.label, allocation: s.allocation })),
     oneOffs: live.oneOffs,
+    ...(live.personal.length
+      ? {
+          personal: live.personal.map((c) => ({
+            id: c.id,
+            label: c.label,
+            amount: c.amount,
+            ownerId: c.ownerId,
+            ...(c.category ? { category: c.category } : {}),
+            ...(c.private ? { private: true } : {}),
+            ...(c.createdBy ? { createdBy: c.createdBy } : {}),
+          })),
+        }
+      : {}),
   };
 }
 
@@ -419,6 +476,8 @@ function monthFromSnapshot(model: BudgetModel, ym: YM, snap: MonthSnapshot, reco
       salaryAdjusted: false,
       contributionAdjusted: false,
       deleted: !personIds.has(p.id),
+      personalCharges: 0,
+      available: roundCents(salary - contribution),
     };
   });
   const charges: ResolvedCharge[] = (snap.charges ?? []).map((c) => {
@@ -476,20 +535,51 @@ function monthFromSnapshot(model: BudgetModel, ym: YM, snap: MonthSnapshot, reco
     });
   }
   const oneOffs = (snap.oneOffs ?? []).map((o) => ({ ...o }));
+  const personal: ResolvedPersonalCharge[] = (snap.personal ?? []).map((c) => {
+    const def = chargeById.get(c.id);
+    return {
+      id: c.id,
+      ownerId: c.ownerId,
+      label: def?.label ?? c.label,
+      category: def?.category ?? c.category,
+      amount: roundCents(c.amount),
+      private: def ? !!def.private : !!c.private,
+      createdBy: def?.createdBy ?? c.createdBy,
+      frequency: def?.frequency ?? 'monthly',
+    };
+  });
+  const frozenPeople = withPersonal(people, personal);
   return {
     ym,
     closed: true,
     frozen: true,
     closedAt: snap.closedAt,
-    people,
+    people: frozenPeople,
     oneOffs,
     charges,
     savings,
+    personal,
     generalSpent: roundCents(record?.expenses?.[GENERAL_SAVINGS_ID] ?? 0),
     generalComment: record?.expenseComments?.[GENERAL_SAVINGS_ID] ?? '',
     comment: record?.comment ?? '',
-    totals: totalsOf(people, oneOffs, charges, savings),
+    totals: totalsOf(frozenPeople, oneOffs, charges, savings, personal),
   };
+}
+
+/**
+ * Charges running at `from` whose last month falls before `to`: they weigh on
+ * the first months only, which is why a 12-month average sits below the
+ * current month. Sorted by last month.
+ */
+export function chargesEndingBetween(model: BudgetModel, from: YM, to: YM): Array<{ charge: Charge; last: YM }> {
+  const out: Array<{ charge: Charge; last: YM }> = [];
+  for (const c of householdCharges(model)) {
+    const w = windowOf(c);
+    if (!w.end || !inWindow(w, from) || compareYM(w.end, to) >= 0) continue;
+    if (chargeFrequency(c) === 'once') continue;
+    out.push({ charge: c, last: w.end });
+  }
+  return out.sort((a, b) => compareYM(a.last, b.last) || a.charge.label.localeCompare(b.charge.label, 'fr'));
 }
 
 export function isMonthClosed(model: BudgetModel, ym: YM, today: YM): boolean {

@@ -54,6 +54,7 @@ const KNOWN_TOP_KEYS = new Set([
   'currentYear',
   'people',
   'charges',
+  'personalCharges',
   'projects',
   'yearlyData',
   'yearlyExpenses',
@@ -164,6 +165,9 @@ export function normalizeCharge(raw: unknown, index: number): Charge {
   setOrDelete(c, 'smooth', src.smooth === true ? true : undefined);
   setOrDelete(c, 'amountHistory', amountSteps(src.amountHistory));
   setOrDelete(c, 'overrides', ymMap(src.overrides));
+  setOrDelete(c, 'ownerId', typeof src.ownerId === 'string' && src.ownerId ? src.ownerId : undefined);
+  setOrDelete(c, 'private', c.ownerId && src.private === true ? true : undefined);
+  setOrDelete(c, 'createdBy', typeof src.createdBy === 'string' && src.createdBy ? src.createdBy : undefined);
   return c;
 }
 
@@ -198,6 +202,17 @@ function decodeSnapshot(v: unknown): MonthSnapshot | undefined {
     }),
     projects: (v.projects as unknown[]).filter(isObj).map((p) => ({ id: str(p.id), label: str(p.label), allocation: num(p.allocation) })),
     oneOffs: Array.isArray(v.oneOffs) ? (v.oneOffs as unknown[]).filter(isObj).map((o, i) => ({ id: str(o.id) || `oo-${i}`, label: str(o.label), amount: num(o.amount) })) : [],
+    ...(Array.isArray(v.personal)
+      ? {
+          personal: (v.personal as unknown[]).filter(isObj).filter((c) => typeof c.ownerId === 'string').map((c) => {
+            const out: NonNullable<MonthSnapshot['personal']>[number] = { id: str(c.id), label: str(c.label), amount: num(c.amount), ownerId: str(c.ownerId) };
+            if (typeof c.category === 'string') out.category = c.category;
+            if (c.private === true) out.private = true;
+            if (typeof c.createdBy === 'string') out.createdBy = c.createdBy;
+            return out;
+          }),
+        }
+      : {}),
   };
 }
 
@@ -251,7 +266,13 @@ export function decodeBudget(raw: unknown, today: YM): BudgetModel {
   const model: BudgetModel = {
     budgetTitle: str(src.budgetTitle),
     people: Array.isArray(src.people) ? src.people.map(normalizePerson) : [],
-    charges: Array.isArray(src.charges) ? src.charges.map(normalizeCharge) : [],
+    // Household charges, then members' personal charges (kept in one list in
+    // memory, stored apart so the pot readers — recap, mobile — never count them).
+    charges: [
+      ...(Array.isArray(src.charges) ? src.charges.map(normalizeCharge) : []),
+      // A personal charge always has its owner; without one it is a household charge.
+      ...(Array.isArray(src.personalCharges) ? src.personalCharges.map((c, i) => normalizeCharge(c, 1000 + i)) : []),
+    ],
     projects: Array.isArray(src.projects) ? src.projects.map(normalizeProject) : [],
     months: {},
     chargeMappings: Array.isArray(src.chargeMappings) ? src.chargeMappings : [],
@@ -442,7 +463,8 @@ export function encodeBudget(model: BudgetModel, today: YM, nowIso: string): Dic
     budgetTitle: model.budgetTitle,
     currentYear: yearOf(today),
     people: model.people.map((p) => syncPerson(p, today)),
-    charges: model.charges.map((c) => syncCharge(c, today)),
+    charges: model.charges.filter((c) => !c.ownerId).map((c) => syncCharge(c, today)),
+    personalCharges: model.charges.filter((c) => !!c.ownerId).map((c) => syncCharge(c, today)),
     projects: model.projects.map((p) => syncProject(p, today)),
     yearlyData,
     oneTimeIncomes,

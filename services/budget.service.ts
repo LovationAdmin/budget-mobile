@@ -18,6 +18,12 @@ export const BudgetService = {
     return data;
   },
 
+  /** The caller's own private details (e.g. real names of private personal charges). */
+  async privateItems(id: string): Promise<Record<string, unknown>> {
+    const { data } = await api.get<{ items?: Record<string, unknown> }>(ENDPOINTS.PRIVATE_ITEMS(id));
+    return data.items ?? {};
+  },
+
   async create(payload: CreateBudgetRequest): Promise<Budget> {
     const { data } = await api.post<Budget>(ENDPOINTS.BUDGETS, {
       name:     payload.name,
