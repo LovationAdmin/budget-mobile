@@ -7,6 +7,7 @@ import Toast from 'react-native-toast-message';
 
 import { useBudget, useBudgetData } from '@/hooks/useBudget';
 import { useBudgetMutations } from '@/hooks/useBudgetMutations';
+import { isWebBudget, webCharges, webMonthSummary } from '@/lib/budget/web';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { Card } from '@/components/ui/Card';
@@ -22,12 +23,12 @@ function formatMoney(n: number, currency = 'EUR') {
 
 function ChargeRow({
   charge, currency, onPress,
-}: { charge: Charge; currency: string; onPress: () => void }) {
+}: { charge: Charge; currency: string; onPress?: () => void }) {
   const { t } = useTranslation();
   const color = CATEGORY_COLORS[String(charge.category)] ?? palette.light.mutedFg;
   const savings = charge.market_suggestion?.savings_potential;
   return (
-    <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress} disabled={!onPress}>
       <Card className="mb-2" padding="sm">
         <View className="flex-row items-start">
           <View className="mr-3 mt-0.5 h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
@@ -79,8 +80,10 @@ export default function ChargesTab() {
 
   const data = env.data.data ?? {};
   const currency = budget.data?.currency ?? 'EUR';
-  const charges = (data.charges ?? []) as Charge[];
-  const totalExpenses = data.total_expenses ?? charges.reduce((s, c) => s + (c.amount ?? 0), 0);
+  // Web-model budgets: this month's charges as the web computes them, read-only.
+  const web = isWebBudget(data) ? webMonthSummary(data) : null;
+  const charges = web ? webCharges(web) : ((data.charges ?? []) as Charge[]);
+  const totalExpenses = web ? web.month.totals.charges : data.total_expenses ?? charges.reduce((s, c) => s + (c.amount ?? 0), 0);
   const totalSavings  = charges.reduce((s, c) => s + (c.market_suggestion?.savings_potential ?? 0), 0);
 
   const handleBulkAnalyze = async () => {
@@ -106,7 +109,7 @@ export default function ChargesTab() {
           <ChargeRow
             charge={item}
             currency={currency}
-            onPress={() => { setEditing(item); setShowForm(true); }}
+            onPress={web ? undefined : () => { setEditing(item); setShowForm(true); }}
           />
         )}
         refreshControl={
@@ -158,13 +161,17 @@ export default function ChargesTab() {
         }
       />
 
+      {web ? null : (
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={t('budget.charges.addCharge')}
         onPress={() => { setEditing(undefined); setShowForm(true); }}
         className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-warm-500"
         style={{ shadowColor: '#F97316', shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }}
       >
         <Plus size={24} color="#FFF" />
       </TouchableOpacity>
+      )}
 
       <ChargeFormSheet
         visible={showForm}

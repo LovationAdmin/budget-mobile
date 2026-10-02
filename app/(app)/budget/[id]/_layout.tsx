@@ -7,7 +7,8 @@ import {
   PieChart as PieIcon, Users, CreditCard, Target, CalendarDays, TrendingUp, ChevronLeft,
 } from 'lucide-react-native';
 
-import { useBudget } from '@/hooks/useBudget';
+import { useBudget, useIsWebBudget } from '@/hooks/useBudget';
+import { ReadOnlyBanner } from '@/components/budget/ReadOnlyBanner';
 import { useBudgetSocket } from '@/hooks/useBudgetSocket';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
@@ -28,6 +29,7 @@ export default function BudgetLayout() {
   const router = useRouter();
   const pathname = usePathname();
   const { data: budget, isLoading, isError, refetch } = useBudget(id!);
+  const readOnly = useIsWebBudget(id!);
 
   // Subscribe to realtime updates while this layout is mounted.
   useBudgetSocket(id);
@@ -84,6 +86,8 @@ export default function BudgetLayout() {
           })}
         </ScrollView>
       </View>
+
+      {readOnly ? <ReadOnlyBanner budgetId={id!} /> : null}
 
       <Slot />
     </SafeAreaView>

@@ -67,7 +67,13 @@
     "overview": {
       "income": "Income", "expenses": "Expenses", "balance": "Balance",
       "savings": "Savings", "monthlyBreakdown": "Monthly breakdown",
-      "addIncome": "Add income"
+      "addIncome": "Add income",
+      "inflows": "Inflows", "charges": "Charges", "savingsMonth": "Savings this month",
+      "leftover": "Left over", "contributions": "Household contributions", "oneOff": "One-off income"
+    },
+    "readOnly": {
+      "body": "This budget uses closed months and contributions: view only on mobile, same figures as the web app.",
+      "openWeb": "Edit on the web"
     },
     "members": {
       "title": "Members", "invite": "Invite by email",

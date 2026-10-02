@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/Card';
 import { IncomeFormSheet } from '@/components/forms/IncomeFormSheet';
 import { CATEGORY_COLORS, palette } from '@/constants/colors';
 import type { Charge, IncomeSource } from '@/types';
+import { isWebBudget, webMonthSummary } from '@/lib/budget/web';
 
 function formatMoney(n: number, currency = 'EUR') {
   try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n); }
@@ -42,26 +43,36 @@ export default function OverviewTab() {
 
   const data = env.data.data ?? {};
   const currency = budget.data?.currency ?? 'EUR';
+  // Web-model budgets: this month exactly as the web app computes it.
+  const web = isWebBudget(data) ? webMonthSummary(data) : null;
   const charges  = (data.charges ?? []) as Charge[];
-  const incomes  = (data.income_sources ?? []) as IncomeSource[];
+  const incomes: IncomeSource[] = web
+    ? [
+        ...web.month.people.map((p) => ({ id: p.id, label: p.name, amount: p.contribution })),
+        ...web.month.oneOffs.map((o) => ({ id: o.id, label: o.label, amount: o.amount })),
+      ].filter((i) => i.amount !== 0)
+    : ((data.income_sources ?? []) as IncomeSource[]);
 
-  const totalIncome   = data.total_income   ?? incomes.reduce((s, i) => s + (i.amount ?? 0), 0);
-  const totalExpenses = data.total_expenses ?? charges.reduce((s, c) => s + (c.amount ?? 0), 0);
-  const balance       = data.balance        ?? totalIncome - totalExpenses;
+  const totalIncome   = web ? web.month.totals.entrees : data.total_income ?? incomes.reduce((s, i) => s + (i.amount ?? 0), 0);
+  const totalExpenses = web ? web.month.totals.charges : data.total_expenses ?? charges.reduce((s, c) => s + (c.amount ?? 0), 0);
+  const balance       = web ? web.month.totals.reste : data.balance ?? totalIncome - totalExpenses;
   const balanceColor  = balance >= 0 ? palette.success : palette.danger;
 
-  const pieData = useMemo(() => {
-    const byCat = charges.reduce<Record<string, number>>((acc, c) => {
-      const k = String(c.category);
-      acc[k] = (acc[k] ?? 0) + (c.amount ?? 0);
-      return acc;
-    }, {});
-    return Object.entries(byCat).map(([k, amount]) => ({
-      x: t(`categories.${k}`, { defaultValue: k }),
-      y: amount,
-      color: CATEGORY_COLORS[k] ?? palette.light.mutedFg,
-    }));
-  }, [charges, t]);
+  // Plain computation (no hook): it runs after the early returns above.
+  const slices = web
+    ? web.byCategory
+    : Object.entries(
+        charges.reduce<Record<string, number>>((acc, c) => {
+          const k = String(c.category);
+          acc[k] = (acc[k] ?? 0) + (c.amount ?? 0);
+          return acc;
+        }, {}),
+      ).map(([category, amount]) => ({ category, amount }));
+  const pieData = slices.map(({ category, amount }) => ({
+    x: t(`categories.${category}`, { defaultValue: category }),
+    y: amount,
+    color: CATEGORY_COLORS[category] ?? palette.light.mutedFg,
+  }));
 
   return (
     <ScrollView
@@ -72,12 +83,19 @@ export default function OverviewTab() {
       }
     >
       <View className="flex-row gap-3">
-        <StatBox label={t('budget.overview.income')}   value={formatMoney(totalIncome, currency)}   color={palette.success} />
-        <StatBox label={t('budget.overview.expenses')} value={formatMoney(totalExpenses, currency)} color={palette.danger}  />
+        <StatBox label={t(web ? 'budget.overview.inflows' : 'budget.overview.income')} value={formatMoney(totalIncome, currency)} color={palette.success} />
+        <StatBox label={t(web ? 'budget.overview.charges' : 'budget.overview.expenses')} value={formatMoney(totalExpenses, currency)} color={palette.danger} />
       </View>
 
+      {web ? (
+        <Text className="-mb-1 text-center text-xs text-muted-fg font-sans">
+          {web.label}
+          {web.month.totals.savings ? ` · ${t('budget.overview.savingsMonth')} ${formatMoney(web.month.totals.savings, currency)}` : ''}
+        </Text>
+      ) : null}
+
       <Card className="items-center" padding="md">
-        <Text className="text-sm text-muted-fg font-medium">{t('budget.overview.balance')}</Text>
+        <Text className="text-sm text-muted-fg font-medium">{t(web ? 'budget.overview.leftover' : 'budget.overview.balance')}</Text>
         <Text className="mt-1 text-3xl font-display-extra" style={{ color: balanceColor }}>
           {formatMoney(balance, currency)}
         </Text>
@@ -114,8 +132,9 @@ export default function OverviewTab() {
       <Card>
         <View className="mb-3 flex-row items-center justify-between">
           <Text className="text-sm text-foreground font-display-semibold">
-            {t('budget.overview.income')}
+            {t(web ? 'budget.overview.contributions' : 'budget.overview.income')}
           </Text>
+          {web ? null : (
           <TouchableOpacity
             onPress={() => { setEditingIncome(undefined); setShowIncomeForm(true); }}
             className="rounded-lg bg-warm-500 px-3 py-1 flex-row items-center"
@@ -125,16 +144,18 @@ export default function OverviewTab() {
               {t('common.save')}
             </Text>
           </TouchableOpacity>
+          )}
         </View>
         {incomes.length > 0 ? (
           incomes.map((s) => (
             <TouchableOpacity
               key={s.id}
+              disabled={!!web}
               onPress={() => { setEditingIncome(s); setShowIncomeForm(true); }}
               className="mb-2 flex-row items-center justify-between"
             >
               <View className="flex-row items-center gap-2 flex-1">
-                <Pencil size={12} color={palette.light.mutedFg} />
+                {web ? null : <Pencil size={12} color={palette.light.mutedFg} />}
                 <Text className="text-sm text-foreground font-sans">{s.label}</Text>
               </View>
               <Text className="text-sm text-success font-display-semibold">
