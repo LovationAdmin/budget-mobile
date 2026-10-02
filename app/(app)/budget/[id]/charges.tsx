@@ -80,7 +80,8 @@ export default function ChargesTab() {
 
   const data = env.data.data ?? {};
   const currency = budget.data?.currency ?? 'EUR';
-  // Web-model budgets: this month's charges as the web computes them, read-only.
+  // Web-model budgets: this month's charges as the web computes them; edits
+  // apply from the first open month (lib/budget/webEdit.ts).
   const web = isWebBudget(data) ? webMonthSummary(data) : null;
   const charges = web ? webCharges(web) : ((data.charges ?? []) as Charge[]);
   const totalExpenses = web ? web.month.totals.charges : data.total_expenses ?? charges.reduce((s, c) => s + (c.amount ?? 0), 0);
@@ -109,7 +110,7 @@ export default function ChargesTab() {
           <ChargeRow
             charge={item}
             currency={currency}
-            onPress={web ? undefined : () => { setEditing(item); setShowForm(true); }}
+            onPress={() => { setEditing(item); setShowForm(true); }}
           />
         )}
         refreshControl={
@@ -161,7 +162,6 @@ export default function ChargesTab() {
         }
       />
 
-      {web ? null : (
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityLabel={t('budget.charges.addCharge')}
@@ -171,14 +171,13 @@ export default function ChargesTab() {
       >
         <Plus size={24} color="#FFF" />
       </TouchableOpacity>
-      )}
 
       <ChargeFormSheet
         visible={showForm}
         onClose={() => setShowForm(false)}
         initial={editing}
         onSubmit={async (c) => {
-          if (editing) await m.updateCharge(editing.id, c);
+          if (editing) await m.updateCharge(editing.id, c, editing.amount);
           else         await m.addCharge(c);
         }}
         onDelete={editing ? () => m.removeCharge(editing.id) : undefined}

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react-native';
 
 import { useBudget, useIsWebBudget } from '@/hooks/useBudget';
-import { ReadOnlyBanner } from '@/components/budget/ReadOnlyBanner';
+import { WebModelBanner } from '@/components/budget/WebModelBanner';
 import { useBudgetSocket } from '@/hooks/useBudgetSocket';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorScreen } from '@/components/ErrorScreen';
@@ -29,7 +29,7 @@ export default function BudgetLayout() {
   const router = useRouter();
   const pathname = usePathname();
   const { data: budget, isLoading, isError, refetch } = useBudget(id!);
-  const readOnly = useIsWebBudget(id!);
+  const webModel = useIsWebBudget(id!);
 
   // Subscribe to realtime updates while this layout is mounted.
   useBudgetSocket(id);
@@ -87,7 +87,7 @@ export default function BudgetLayout() {
         </ScrollView>
       </View>
 
-      {readOnly ? <ReadOnlyBanner budgetId={id!} /> : null}
+      {webModel ? <WebModelBanner budgetId={id!} /> : null}
 
       <Slot />
     </SafeAreaView>

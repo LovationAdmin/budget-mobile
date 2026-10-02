@@ -68,8 +68,8 @@ export default function CalendarTab() {
   const currency = budget.data?.currency ?? 'EUR';
   const locale = i18n.language === 'fr' ? fr : enUS;
 
-  // Web-model budgets: the month as the web computes it (contributions,
-  // one-off income and charges), read-only.
+  // Web-model budgets: the month as the web computes it. Lines are edited for
+  // this month only; member contributions (`in-…`) stay web-only.
   const data = env.data.data ?? {};
   const web = isWebBudget(data) ? webMonthSummary(data, format(currentMonth, 'yyyy-MM')) : null;
 
@@ -92,7 +92,7 @@ export default function CalendarTab() {
           <EntryRow
             entry={item}
             currency={currency}
-            onPress={web ? undefined : () => { setEditing(item); setShowForm(true); }}
+            onPress={web && item.id.startsWith('in-') ? undefined : () => { setEditing(item); setShowForm(true); }}
           />
         )}
         refreshControl={
@@ -136,7 +136,6 @@ export default function CalendarTab() {
         }
       />
 
-      {web ? null : (
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityLabel={t('budget.calendar.addEntry')}
@@ -146,7 +145,6 @@ export default function CalendarTab() {
       >
         <Plus size={24} color="#FFF" />
       </TouchableOpacity>
-      )}
 
       <CalendarEntryFormSheet
         visible={showForm}
@@ -154,10 +152,10 @@ export default function CalendarTab() {
         initial={editing}
         defaultDate={format(currentMonth, 'yyyy-MM-dd')}
         onSubmit={async (e) => {
-          if (editing) await m.updateCalendarEntry(editing.id, e);
+          if (editing) await m.updateCalendarEntry(editing.id, e, editing.date.slice(0, 7));
           else         await m.addCalendarEntry(e);
         }}
-        onDelete={editing ? () => m.removeCalendarEntry(editing.id) : undefined}
+        onDelete={editing ? () => m.removeCalendarEntry(editing.id, editing.date.slice(0, 7)) : undefined}
       />
     </View>
   );

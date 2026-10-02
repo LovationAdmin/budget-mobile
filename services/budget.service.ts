@@ -1,6 +1,5 @@
 import api from './api';
 import { ENDPOINTS } from '@/constants/api';
-import { isWebBudget, READ_ONLY_WEB_BUDGET } from '@/lib/budget/web';
 import type { Budget, BudgetDataEnvelope, BudgetDataPayload, CreateBudgetRequest } from '@/types';
 
 export const BudgetService = {
@@ -34,8 +33,6 @@ export const BudgetService = {
   },
 
   async updateData(id: string, payload: BudgetDataPayload): Promise<BudgetDataEnvelope> {
-    // Last line of defence: web-model budgets are read-only on mobile.
-    if (isWebBudget(payload)) throw new Error(READ_ONLY_WEB_BUDGET);
     const { data } = await api.put<BudgetDataEnvelope>(ENDPOINTS.BUDGET_DATA(id), payload);
     return data;
   },
